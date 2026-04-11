@@ -100,23 +100,37 @@ Seven slash commands provide quick access:
 
 ## Quick Start
 
-Skills are plain Markdown — they work with any AI coding agent. Pick your tool:
+Skills are plain Markdown — they work with any AI coding agent that accepts system prompts or instruction files.
 
-### Claude Code
+<details>
+<summary><b>Claude Code (recommended)</b></summary>
+
+**Marketplace install:**
 
 ```bash
-# 1. Add the marketplace (one-time setup)
 claude plugin marketplace add GuillemRoca/agent-skills-android
-
-# 2. Install the plugin
 claude plugin install agent-skills-android
 ```
 
 Restart Claude Code. Skills, slash commands (`/spec`, `/plan`, `/build`, `/test`, `/review`, `/ship`), and hooks are available immediately.
 
-### Cursor
+To update later:
 
-Copy skills into `.cursor/rules/` or combine into a single `.cursorrules` file. See [Cursor setup guide](docs/cursor-setup.md).
+```bash
+claude plugin update agent-skills-android
+```
+
+> **SSH errors?** The marketplace clones repos via SSH. If you don't have SSH keys set up on GitHub, either [add your SSH key](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account) or switch to HTTPS for fetches only:
+> ```bash
+> git config --global url."https://github.com/".insteadOf "git@github.com:"
+> ```
+
+</details>
+
+<details>
+<summary><b>Cursor</b></summary>
+
+Copy any `SKILL.md` into `.cursor/rules/`, or combine into a single `.cursorrules` file. See [docs/cursor-setup.md](docs/cursor-setup.md).
 
 ```bash
 mkdir -p .cursor/rules
@@ -125,47 +139,60 @@ cp agent-skills-android/skills/code-review-and-quality/SKILL.md .cursor/rules/
 cp agent-skills-android/skills/incremental-implementation/SKILL.md .cursor/rules/
 ```
 
-### Windsurf
+</details>
 
-Combine 2–3 core skills into `.windsurfrules`. See [Windsurf setup guide](docs/windsurf-setup.md).
+<details>
+<summary><b>Gemini CLI</b></summary>
 
-```bash
-cat agent-skills-android/skills/test-driven-development/SKILL.md > .windsurfrules
-echo -e "\n---\n" >> .windsurfrules
-cat agent-skills-android/skills/code-review-and-quality/SKILL.md >> .windsurfrules
-```
-
-### Gemini CLI
-
-Copy skills into `.gemini/skills/` for on-demand activation. See [Gemini CLI setup guide](docs/gemini-cli-setup.md).
+Install skills for auto-discovery, or add to `GEMINI.md` for persistent context. See [docs/gemini-cli-setup.md](docs/gemini-cli-setup.md).
 
 ```bash
 mkdir -p .gemini/skills
 cp -r agent-skills-android/skills/* .gemini/skills/
 ```
 
-### GitHub Copilot
+</details>
 
-Add skills to `.github/skills/` and create a `copilot-instructions.md`. See [Copilot setup guide](docs/copilot-setup.md).
+<details>
+<summary><b>Windsurf</b></summary>
 
-### OpenCode
+Combine 2–3 core skills into `.windsurfrules`. See [docs/windsurf-setup.md](docs/windsurf-setup.md).
 
-Copy `AGENTS.md` and the `skills/` directory into your project root. The agent selects skills automatically. See [OpenCode setup guide](docs/opencode-setup.md).
+</details>
 
-### Manual / Other Agents
+<details>
+<summary><b>OpenCode</b></summary>
 
-Skills are Markdown files — any AI agent that reads project context can use them:
+Uses agent-driven skill execution via `AGENTS.md` and the `skill` tool. See [docs/opencode-setup.md](docs/opencode-setup.md).
+
+</details>
+
+<details>
+<summary><b>GitHub Copilot</b></summary>
+
+Use agent definitions from `agents/` as Copilot personas and skill content in `.github/copilot-instructions.md`. See [docs/copilot-setup.md](docs/copilot-setup.md).
+
+</details>
+
+<details>
+<summary><b>Kiro IDE</b></summary>
+
+Copy skills into `.kiro/skills/` at the project or global level. Kiro also supports `AGENTS.md`. See [Kiro docs](https://kiro.dev/docs/skills/).
+
+</details>
+
+<details>
+<summary><b>Other Agents</b></summary>
+
+Skills are plain Markdown — they work with any agent that accepts system prompts or instruction files:
 
 ```bash
 git clone https://github.com/GuillemRoca/agent-skills-android.git
 ```
 
-Point your agent at `skills/*/SKILL.md` or copy them into your project. Reference in your rules file:
+Copy skills into your project and point your agent at them. See [docs/getting-started.md](docs/getting-started.md).
 
-```markdown
-See skills/ for Android engineering workflow skills.
-Load the appropriate skill for your current task.
-```
+</details>
 
 ## Tech Stack
 
