@@ -16,12 +16,15 @@ Agents don't just read skills — they **implement** complete workflows includin
 ### 1. Install
 
 ```bash
-# As a Claude Code plugin
-claude plugin install GuillemRoca/agent-skills-android
+# As a Claude Code plugin (recommended)
+claude plugin marketplace add GuillemRoca/agent-skills-android
+claude plugin install agent-skills-android
 
 # Or clone alongside your project
 git clone https://github.com/GuillemRoca/agent-skills-android.git
 ```
+
+Restart Claude Code after plugin installation.
 
 ### 2. Start with These Three Skills
 

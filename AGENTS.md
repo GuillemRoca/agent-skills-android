@@ -112,15 +112,21 @@ Detailed checklists in `references/`:
 ### Claude Code
 
 ```bash
-# Install as a plugin
-claude plugin install GuillemRoca/agent-skills-android
+# 1. Add the marketplace (one-time setup)
+claude plugin marketplace add GuillemRoca/agent-skills-android
+
+# 2. Install the plugin
+claude plugin install agent-skills-android
 ```
 
-Or manually:
+Restart Claude Code after installation.
+
+### Manual Setup
+
 1. Clone this repo alongside your project
 2. Reference skills in your `CLAUDE.md`:
    ```
-   See ../agent-skills-android/skills/ for engineering workflow skills.
+   See ../agent-skills-android/skills/ for Android engineering workflow skills.
    ```
 
 ## Core Principles

@@ -100,27 +100,42 @@ Seven slash commands provide quick access:
 
 ## Installation
 
-### Claude Code
+### Claude Code (recommended)
+
+Two steps — first add the marketplace, then install the plugin:
 
 ```bash
-# Install as a plugin
-claude plugin install GuillemRoca/agent-skills-android
+# 1. Add the marketplace (one-time setup)
+claude plugin marketplace add GuillemRoca/agent-skills-android
+
+# 2. Install the plugin
+claude plugin install agent-skills-android
+```
+
+After installation, restart Claude Code. Skills, slash commands, and hooks will be available in every session.
+
+To update later:
+
+```bash
+claude plugin update agent-skills-android
 ```
 
 ### Manual Setup
 
-1. Clone this repo:
+If you prefer not to use the plugin system:
+
+1. Clone this repo alongside your project:
    ```bash
    git clone https://github.com/GuillemRoca/agent-skills-android.git
    ```
 
-2. Reference in your project's `CLAUDE.md`:
+2. Reference skills in your project's `CLAUDE.md`:
    ```markdown
    See ../agent-skills-android/skills/ for Android engineering workflow skills.
    Load the appropriate skill for your current task.
    ```
 
-3. Or copy specific skills into your project:
+3. Or copy specific skills directly into your project:
    ```bash
    cp -r agent-skills-android/skills/test-driven-development your-project/skills/
    ```
