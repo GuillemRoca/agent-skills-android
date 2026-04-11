@@ -13,23 +13,24 @@ Skills are structured Markdown files that teach AI coding agents **how** to work
 
 ## Development Lifecycle
 
-Skills map to a structured lifecycle:
-
 ```
-DEFINE → PLAN → BUILD → VERIFY → REVIEW → SHIP
+  DEFINE          PLAN           BUILD          VERIFY         REVIEW          SHIP
+ ┌──────┐      ┌──────┐      ┌──────┐      ┌──────┐      ┌──────┐      ┌──────┐
+ │ Idea │ ───▶ │ Spec │ ───▶ │ Code │ ───▶ │ Test │ ───▶ │  QA  │ ───▶ │  Go  │
+ │Refine│      │  PRD │      │ Impl │      │Debug │      │ Gate │      │ Live │
+ └──────┘      └──────┘      └──────┘      └──────┘      └──────┘      └──────┘
+  /spec          /plan          /build        /test         /review       /ship
 ```
 
-Seven slash commands provide quick access:
-
-| Command | Phase | What It Does |
-|---------|-------|-------------|
-| `/spec` | DEFINE | Write a structured specification |
-| `/plan` | PLAN | Break work into ordered tasks |
-| `/build` | BUILD | Implement incrementally with TDD |
-| `/test` | VERIFY | Test-driven development workflow |
-| `/review` | REVIEW | Five-axis code review |
-| `/code-simplify` | BUILD | Simplify code preserving behavior |
-| `/ship` | SHIP | Pre-launch checklist and rollout |
+| Phase | Command | What It Does |
+|-------|---------|-------------|
+| DEFINE | `/spec` | Write a structured specification |
+| PLAN | `/plan` | Break work into ordered tasks |
+| BUILD | `/build` | Implement incrementally with TDD |
+| BUILD | `/code-simplify` | Simplify code preserving behavior |
+| VERIFY | `/test` | Test-driven development workflow |
+| REVIEW | `/review` | Five-axis code review |
+| SHIP | `/ship` | Pre-launch checklist and rollout |
 
 ## All 24 Skills
 
