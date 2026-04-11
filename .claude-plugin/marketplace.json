@@ -1,0 +1,17 @@
+{
+  "project": "agent-skills-android",
+  "owner": "GuillemRoca",
+  "metadata": {
+    "description": "Production-grade Android engineering skills for AI coding agents — from spec to Play Store",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "agent-skills-android",
+      "source": {
+        "type": "github",
+        "url": "https://github.com/GuillemRoca/agent-skills-android"
+      }
+    }
+  ]
+}
