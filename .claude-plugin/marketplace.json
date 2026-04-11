@@ -1,16 +1,16 @@
 {
-  "project": "agent-skills-android",
-  "owner": "GuillemRoca",
-  "metadata": {
-    "description": "Production-grade Android engineering skills for AI coding agents — from spec to Play Store",
-    "version": "1.0.0"
+  "name": "agent-skills-android",
+  "owner": {
+    "name": "Guillem Roca"
   },
   "plugins": [
     {
       "name": "agent-skills-android",
+      "version": "1.0.0",
+      "description": "Production-grade Android engineering skills for AI coding agents. Covers the full development lifecycle from spec to Play Store: Kotlin, Jetpack Compose, Gradle, Android SDK, and the Android ecosystem.",
       "source": {
-        "type": "github",
-        "url": "https://github.com/GuillemRoca/agent-skills-android"
+        "source": "github",
+        "repo": "GuillemRoca/agent-skills-android"
       }
     }
   ]

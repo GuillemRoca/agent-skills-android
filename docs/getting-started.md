@@ -17,7 +17,7 @@ Agents don't just read skills — they **implement** complete workflows includin
 
 ```bash
 # As a Claude Code plugin
-claude plugin add GuillemRoca/agent-skills-android
+claude plugin install GuillemRoca/agent-skills-android
 
 # Or clone alongside your project
 git clone https://github.com/GuillemRoca/agent-skills-android.git

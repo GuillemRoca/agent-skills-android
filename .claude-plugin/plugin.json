@@ -1,9 +1,20 @@
 {
   "name": "agent-skills-android",
-  "version": "1.0.0",
   "description": "Production-grade Android engineering skills for AI coding agents. Covers the full development lifecycle from spec to Play Store: Kotlin, Jetpack Compose, Gradle, Android SDK, and the Android ecosystem.",
-  "creator": "Guillem Roca",
-  "license": "MIT",
+  "version": "1.0.0",
+  "author": {
+    "name": "Guillem Roca"
+  },
+  "homepage": "https://github.com/GuillemRoca/agent-skills-android",
   "repository": "https://github.com/GuillemRoca/agent-skills-android",
-  "commands": "./.claude/commands"
+  "license": "MIT",
+  "keywords": [
+    "android",
+    "kotlin",
+    "jetpack-compose",
+    "skills",
+    "tdd",
+    "architecture",
+    "workflows"
+  ]
 }

@@ -104,7 +104,7 @@ Seven slash commands provide quick access:
 
 ```bash
 # Install as a plugin
-claude plugin add GuillemRoca/agent-skills-android
+claude plugin install GuillemRoca/agent-skills-android
 ```
 
 ### Manual Setup

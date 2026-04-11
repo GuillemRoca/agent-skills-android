@@ -113,7 +113,7 @@ Detailed checklists in `references/`:
 
 ```bash
 # Install as a plugin
-claude plugin add GuillemRoca/agent-skills-android
+claude plugin install GuillemRoca/agent-skills-android
 ```
 
 Or manually:
