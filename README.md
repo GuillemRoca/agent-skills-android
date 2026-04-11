@@ -98,9 +98,7 @@ Seven slash commands provide quick access:
 - **performance-checklist.md** — Android Vitals, startup, rendering, memory, APK size
 - **accessibility-checklist.md** — TalkBack, touch targets, contrast, semantics, testing
 
-## Quick Start
-
-Skills are plain Markdown — they work with any AI coding agent that accepts system prompts or instruction files.
+## Installation
 
 <details>
 <summary><b>Claude Code (recommended)</b></summary>
