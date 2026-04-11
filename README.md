@@ -2,8 +2,6 @@
 
 Production-grade Android engineering skills for AI coding agents. 24 specialized workflows covering the full development lifecycle from spec to Play Store — built for Kotlin, Jetpack Compose, Gradle, and the Android ecosystem.
 
-Adapted from [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) (web/React) to the Android development stack.
-
 ## What Are Skills?
 
 Skills are structured Markdown files that teach AI coding agents **how** to work, not just what to build. Each skill provides:
