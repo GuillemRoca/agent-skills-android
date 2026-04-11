@@ -98,11 +98,11 @@ Seven slash commands provide quick access:
 - **performance-checklist.md** — Android Vitals, startup, rendering, memory, APK size
 - **accessibility-checklist.md** — TalkBack, touch targets, contrast, semantics, testing
 
-## Installation
+## Quick Start
 
-### Claude Code (recommended)
+Skills are plain Markdown — they work with any AI coding agent. Pick your tool:
 
-Two steps — first add the marketplace, then install the plugin:
+### Claude Code
 
 ```bash
 # 1. Add the marketplace (one-time setup)
@@ -112,33 +112,60 @@ claude plugin marketplace add GuillemRoca/agent-skills-android
 claude plugin install agent-skills-android
 ```
 
-After installation, restart Claude Code. Skills, slash commands, and hooks will be available in every session.
+Restart Claude Code. Skills, slash commands (`/spec`, `/plan`, `/build`, `/test`, `/review`, `/ship`), and hooks are available immediately.
 
-To update later:
+### Cursor
+
+Copy skills into `.cursor/rules/` or combine into a single `.cursorrules` file. See [Cursor setup guide](docs/cursor-setup.md).
 
 ```bash
-claude plugin update agent-skills-android
+mkdir -p .cursor/rules
+cp agent-skills-android/skills/test-driven-development/SKILL.md .cursor/rules/
+cp agent-skills-android/skills/code-review-and-quality/SKILL.md .cursor/rules/
+cp agent-skills-android/skills/incremental-implementation/SKILL.md .cursor/rules/
 ```
 
-### Manual Setup
+### Windsurf
 
-If you prefer not to use the plugin system:
+Combine 2–3 core skills into `.windsurfrules`. See [Windsurf setup guide](docs/windsurf-setup.md).
 
-1. Clone this repo alongside your project:
-   ```bash
-   git clone https://github.com/GuillemRoca/agent-skills-android.git
-   ```
+```bash
+cat agent-skills-android/skills/test-driven-development/SKILL.md > .windsurfrules
+echo -e "\n---\n" >> .windsurfrules
+cat agent-skills-android/skills/code-review-and-quality/SKILL.md >> .windsurfrules
+```
 
-2. Reference skills in your project's `CLAUDE.md`:
-   ```markdown
-   See ../agent-skills-android/skills/ for Android engineering workflow skills.
-   Load the appropriate skill for your current task.
-   ```
+### Gemini CLI
 
-3. Or copy specific skills directly into your project:
-   ```bash
-   cp -r agent-skills-android/skills/test-driven-development your-project/skills/
-   ```
+Copy skills into `.gemini/skills/` for on-demand activation. See [Gemini CLI setup guide](docs/gemini-cli-setup.md).
+
+```bash
+mkdir -p .gemini/skills
+cp -r agent-skills-android/skills/* .gemini/skills/
+```
+
+### GitHub Copilot
+
+Add skills to `.github/skills/` and create a `copilot-instructions.md`. See [Copilot setup guide](docs/copilot-setup.md).
+
+### OpenCode
+
+Copy `AGENTS.md` and the `skills/` directory into your project root. The agent selects skills automatically. See [OpenCode setup guide](docs/opencode-setup.md).
+
+### Manual / Other Agents
+
+Skills are Markdown files — any AI agent that reads project context can use them:
+
+```bash
+git clone https://github.com/GuillemRoca/agent-skills-android.git
+```
+
+Point your agent at `skills/*/SKILL.md` or copy them into your project. Reference in your rules file:
+
+```markdown
+See skills/ for Android engineering workflow skills.
+Load the appropriate skill for your current task.
+```
 
 ## Tech Stack
 
