@@ -266,6 +266,8 @@ Row {
     - Run on every screen before shipping
     - Fixes: touch target size, contrast ratio, content descriptions
 
+    For programmatic assertions, `android layout --pretty` returns JSON with `content-desc`, `role`, and `bounds` per node — useful for scripting checks (e.g. unlabeled buttons, touch targets < 48dp). See `references/android-cli-reference.md`.
+
 11. **Compose UI tests for accessibility:**
 
 ```kotlin

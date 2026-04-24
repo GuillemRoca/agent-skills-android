@@ -26,7 +26,7 @@ Every framework-specific decision must be backed by official documentation. Don'
 
 | Priority | Source | Example |
 |----------|--------|---------|
-| 1 (highest) | Official Android docs | developer.android.com |
+| 1 (highest) | Official Android docs | developer.android.com, `kb://` URIs from `android docs fetch` |
 | 2 | Official library docs | Kotlin docs, Hilt docs, Retrofit docs |
 | 3 | AndroidX release notes | developer.android.com/jetpack/androidx/releases |
 | 4 | Official blog posts | android-developers.googleblog.com |
@@ -76,6 +76,15 @@ dependencies {
    - Room 2.7 has different migration APIs than Room 2.5
    - Compose BOM 2025.01 has different APIs than 2024.01
    - Navigation Compose 2.8+ uses type-safe routes
+
+4. **When available, use `android docs` for cite-able URIs:**
+
+```bash
+android docs search "compose recomposition"
+android docs fetch kb://android/topic/compose/performance/recomposition
+```
+
+The returned `kb://` URI is a stable citation — prefer it over a plain `developer.android.com` URL when both point to the same topic. See `references/android-cli-reference.md`.
 
 ### Step 3: Implement Matching Documented Patterns
 
@@ -144,5 +153,5 @@ val permissionLauncher = rememberLauncherForActivityResult(
 - [ ] Official documentation consulted for every framework API used
 - [ ] API patterns match the documented version (not outdated tutorials)
 - [ ] Deprecated API usage flagged with migration path
-- [ ] Source URLs cited in comments for non-obvious patterns
+- [ ] Source URLs cited in comments for non-obvious patterns (`developer.android.com/...` or `kb://...`)
 - [ ] Conflicts with existing code surfaced (not silently overridden)

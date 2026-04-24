@@ -335,3 +335,4 @@ fun LegacyMapView(modifier: Modifier = Modifier) {
 - [ ] Previews exist for screens and key components
 - [ ] `./gradlew assembleDebug` builds successfully
 - [ ] Layout Inspector shows reasonable recomposition counts
+- [ ] On-device hierarchy inspected via `android layout --pretty` when verifying Compose output against `@Preview` (see `references/android-cli-reference.md`)
