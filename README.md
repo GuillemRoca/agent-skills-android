@@ -117,13 +117,13 @@ claude plugin install agent-skills-android
 
 Restart Claude Code. Skills, slash commands (`/spec`, `/plan`, `/build`, `/test`, `/review`, `/ship`), and hooks are available immediately.
 
-To update later:
+To update later (use the fully qualified `plugin@marketplace` form — the short name returns "Plugin not found"):
 
 ```bash
-claude plugin update agent-skills-android
+claude plugin update agent-skills-android@agent-skills-android
 ```
 
-> **SSH errors?** The marketplace clones repos via SSH. If you don't have SSH keys set up on GitHub, either [add your SSH key](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account) or switch to HTTPS for fetches only:
+> **Update fails with an SSH / "Permission denied (publickey)" error?** This is the most common cause. The marketplace clones repos via SSH. If you don't have SSH keys set up on GitHub, either [add your SSH key](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account) or switch to HTTPS for fetches only:
 > ```bash
 > git config --global url."https://github.com/".insteadOf "git@github.com:"
 > ```

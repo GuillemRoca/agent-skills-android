@@ -121,6 +121,18 @@ claude plugin install agent-skills-android
 
 Restart Claude Code after installation.
 
+To update later, use the fully qualified `plugin@marketplace` form (the short name returns "Plugin not found"):
+
+```bash
+claude plugin update agent-skills-android@agent-skills-android
+```
+
+If the update fails with `Permission denied (publickey)`, the marketplace is cloning via SSH without a usable key. Either [add an SSH key to GitHub](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account) or rewrite SSH fetches to HTTPS:
+
+```bash
+git config --global url."https://github.com/".insteadOf "git@github.com:"
+```
+
 ### Manual Setup
 
 1. Clone this repo alongside your project
