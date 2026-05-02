@@ -55,6 +55,22 @@ case "$URL_HOST" in
   172.1[6-9].*|172.2[0-9].*|172.3[01].*) dbg "private host, bypass"; exit 0 ;;
 esac
 
+# Origin allowlist (must match post hook). If a URL is not on the list it
+# was never cached in the first place; skip the cache lookup entirely so
+# we don't issue a revalidation request to a host we wouldn't store.
+DEFAULT_ALLOW="developer.android.com kotlinlang.org material.io m3.material.io developers.google.com firebase.google.com gradle.org square.github.io kotlin.github.io android.googlesource.com"
+ALLOWED="${SDD_CACHE_ALLOWED_HOSTS:-$DEFAULT_ALLOW}"
+host_allowed=0
+for entry in $ALLOWED; do
+  case "$URL_HOST" in
+    "$entry"|*."$entry") host_allowed=1; break ;;
+  esac
+done
+if [ "$host_allowed" -eq 0 ]; then
+  dbg "host $URL_HOST not on allowlist, bypass"
+  exit 0
+fi
+
 # Cache key is sha256(URL), truncated to 128 bits.
 hash_key() {
   if command -v shasum >/dev/null 2>&1; then
@@ -75,6 +91,30 @@ ORIGINAL_PROMPT=$(jq -r '.prompt // empty' "$CACHE_FILE" 2>/dev/null || true)
 ETAG=$(jq -r '.etag // empty' "$CACHE_FILE" 2>/dev/null || true)
 LAST_MOD=$(jq -r '.last_modified // empty' "$CACHE_FILE" 2>/dev/null || true)
 URL_EFFECTIVE=$(jq -r '.url_effective // empty' "$CACHE_FILE" 2>/dev/null || true)
+STORED_HMAC=$(jq -r '.hmac // empty' "$CACHE_FILE" 2>/dev/null || true)
+STORED_CONTENT=$(jq -r '.content // empty' "$CACHE_FILE" 2>/dev/null || true)
+
+# Integrity check. If the entry was written with an HMAC and we have
+# openssl + the key file, recompute and compare. Mismatch = the cache
+# file was tampered with after we wrote it; delete and bypass. Entries
+# without an HMAC field (older entries, or written on a system without
+# openssl) skip this check and rely on the freshness rules below.
+KEY_FILE="$CACHE_DIR/.key"
+if [ -n "$STORED_HMAC" ] && command -v openssl >/dev/null 2>&1 && [ -f "$KEY_FILE" ]; then
+  KEY=$(cat "$KEY_FILE" 2>/dev/null || true)
+  if [ -n "$KEY" ]; then
+    EXPECTED=$(printf '%s\037%s\037%s\037%s' \
+      "${URL_EFFECTIVE:-$URL}" "$ETAG" "$LAST_MOD" "$STORED_CONTENT" \
+      | openssl dgst -sha256 -hmac "$KEY" 2>/dev/null \
+      | awk '{print $NF}')
+    if [ "$EXPECTED" != "$STORED_HMAC" ]; then
+      dbg "WARN: hmac mismatch (cache tampered or key rotated), purging entry"
+      rm -f "$CACHE_FILE"
+      exit 0
+    fi
+    dbg "hmac verified"
+  fi
+fi
 
 # No validator means we cannot verify freshness — never serve from cache.
 # (Should be unreachable: post hook refuses to write entries without
@@ -110,9 +150,8 @@ if [ "$STATUS" != "304" ]; then
 fi
 
 # Server confirmed content unchanged. Serve cached copy to the agent.
-CONTENT=$(jq -r '.content // empty' "$CACHE_FILE" 2>/dev/null || true)
-if [ -z "$CONTENT" ]; then dbg "cache file has empty content field, bypass"; exit 0; fi
-dbg "cache HIT, blocking WebFetch with ${#CONTENT} bytes of cached content"
+if [ -z "$STORED_CONTENT" ]; then dbg "cache file has empty content field, bypass"; exit 0; fi
+dbg "cache HIT, blocking WebFetch with ${#STORED_CONTENT} bytes of cached content"
 
 VERIFIED_AT_ISO=$(date -u -r "$FETCHED_AT" +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null \
               || date -u -d "@$FETCHED_AT" +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null \
@@ -130,7 +169,7 @@ VERIFIED_AT_ISO=$(date -u -r "$FETCHED_AT" +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null \
     printf 'whether this reading still covers it.\n\n'
   fi
   printf -- '----- BEGIN CACHED CONTENT -----\n'
-  printf '%s\n' "$CONTENT"
+  printf '%s\n' "$STORED_CONTENT"
   printf -- '----- END CACHED CONTENT -----\n'
 } >&2
 exit 2

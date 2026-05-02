@@ -174,7 +174,17 @@ ls .claude/sdd-cache/                        # expect exactly one *.json file
 jq . .claude/sdd-cache/*.json >/dev/null && echo "ok"   # expect "ok"
 ```
 
-### 5. Debugging
+### 5. Schema-drift self-test
+
+The post hook depends on Claude Code's `WebFetch` `tool_response` shape. After upgrading Claude Code (or in CI), run:
+
+```bash
+bash hooks/sdd-cache-selftest.sh
+```
+
+The script feeds the post hook seven synthetic payloads (current `object.result` shape, three defensive fallbacks, and three negative cases) and asserts that extraction succeeds or fails as expected. It writes only to a `mktemp -d` sandbox, never to your real cache. Exit non-zero on any failure means the extractor needs updating before the post hook will silently no-op against the new schema.
+
+### 6. Debugging
 
 Both hooks write timestamped events to `.claude/sdd-cache/.debug.log` when debug mode is on. Enable it with either:
 
@@ -197,8 +207,10 @@ The hook is intentionally narrow:
 
 - **Scheme allowlist.** Both hooks pass `--proto '=https' --proto-redir '=https'` to `curl`, so an `https` URL that redirects to `http://`, `file://`, `gopher://`, or any non-`https` scheme is dropped.
 - **Private-IP guard.** Hosts matching `localhost`, `127.*`, `10.*`, `192.168.*`, `172.16-31.*`, `169.254.*`, `::1`, `fc00:*`, `fe80:*` skip caching and revalidation entirely. DNS rebinding can defeat name-based checks; the scheme-redir guard is the second line of defense.
+- **Origin allowlist.** Both hooks only act on URLs whose host is on a list of documented doc origins (`developer.android.com`, `kotlinlang.org`, `material.io`, `developers.google.com`, `firebase.google.com`, `gradle.org`, `square.github.io`, `kotlin.github.io`, `m3.material.io`, `android.googlesource.com`, plus their subdomains). Override with `SDD_CACHE_ALLOWED_HOSTS="host1 host2 ..."` if you need to cache from additional sources. An attacker-steered fetch to a host outside the list is never cached, so the cache hit message ("Use the cached content as if WebFetch had just returned it") cannot be weaponized against allowlisted-doc trust.
 - **No code in cache.** The `<sha>.json` files are read with `jq` and emitted via `printf '%s'` — never `eval`'d, sourced, or interpolated unquoted. A poisoned cache file can mislead the *agent* (prompt-injection-via-doc-body), but not the shell.
 - **Cache files are `0600`, directory `0700`.** Reduces the surface for another local process implanting prompt-injection content under your home directory.
+- **Integrity HMAC (when `openssl` is available).** Each cache entry stores an HMAC-SHA256 over `(url_effective, etag, last_modified, content)` keyed by a per-cache secret in `.claude/sdd-cache/.key` (32 bytes from `/dev/urandom`, base64-encoded, `chmod 600`). On read, the pre hook recomputes and compares — a tampered or implanted file is purged on the spot. Skipped silently when `openssl` is missing; entries written without an HMAC fall through to the freshness checks alone. Rotate the key by deleting `.key` and `*.json`; both hooks regenerate transparently.
 
 Things the hook does **not** defend against:
 
@@ -214,9 +226,20 @@ Things the hook does **not** defend against:
 - **A misbehaving server can serve a wrong `304`.** That's a server bug to diagnose, not a cache invariant to defend against; we don't paper over it with a TTL. Delete the entry if you spot a stale one.
 - **Cache is local and per-project.** There is no team-wide shared cache. Adding one would require a signed-content-addressable storage layer, which is out of scope.
 
+## Cache management
+
+- **List cached URLs:** `bash hooks/sdd-cache-purge.sh --list`
+- **Purge one entry:** `bash hooks/sdd-cache-purge.sh https://developer.android.com/...`
+- **Purge everything:** `bash hooks/sdd-cache-purge.sh --all`
+- **Force re-fetch of a single page:** purge it; the next `WebFetch` repopulates the entry.
+- **Rotate the integrity key:** delete `.claude/sdd-cache/.key` and `.claude/sdd-cache/*.json`. Both hooks regenerate the key on the next write.
+
+The hook itself never deletes entries except when an origin stops emitting validators (post hook, on the next fetch) or when the integrity HMAC mismatches (pre hook, on the next read). All other deletes are user-driven.
+
 ## Requirements
 
 - `jq`
 - `curl`
 - `shasum` or `sha256sum` (auto-detected)
+- `openssl` (optional — enables cache integrity HMAC; absent = HMAC skipped)
 - Bash 3.2+

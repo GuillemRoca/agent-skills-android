@@ -49,6 +49,24 @@ case "$URL_HOST" in
   172.1[6-9].*|172.2[0-9].*|172.3[01].*) dbg "private host, skip caching"; exit 0 ;;
 esac
 
+# Origin allowlist. Only cache responses from documented doc origins; an
+# attacker-steered fetch to a malicious host won't get cached, which keeps
+# the cache hit message ("Use the cached content as if WebFetch had just
+# returned it") trustworthy. Override via SDD_CACHE_ALLOWED_HOSTS
+# (space-separated) when caching additional sources is intentional.
+DEFAULT_ALLOW="developer.android.com kotlinlang.org material.io m3.material.io developers.google.com firebase.google.com gradle.org square.github.io kotlin.github.io android.googlesource.com"
+ALLOWED="${SDD_CACHE_ALLOWED_HOSTS:-$DEFAULT_ALLOW}"
+host_allowed=0
+for entry in $ALLOWED; do
+  case "$URL_HOST" in
+    "$entry"|*."$entry") host_allowed=1; break ;;
+  esac
+done
+if [ "$host_allowed" -eq 0 ]; then
+  dbg "host $URL_HOST not on allowlist, skip caching"
+  exit 0
+fi
+
 # Truncate the persisted prompt. Full prompts are useful for "is this
 # reading still relevant" but anything beyond a couple of sentences risks
 # capturing inadvertently quoted secrets ("compare against API key foo=...")
@@ -192,6 +210,37 @@ fi
 
 NOW=$(date +%s)
 
+# Integrity HMAC. Defends against another local process implanting a
+# poisoned cache file under .claude/sdd-cache/ — without the per-cache
+# secret in .key, an attacker cannot produce a valid HMAC even if they
+# know the URL, ETag, and content. .key is generated lazily on first
+# write with chmod 600. Skipped silently when openssl is absent; the
+# pre hook treats a missing hmac field as "integrity not enforced for
+# this entry" and falls through to its existing freshness checks.
+HMAC=""
+KEY_FILE="$CACHE_DIR/.key"
+if command -v openssl >/dev/null 2>&1; then
+  if [ ! -f "$KEY_FILE" ]; then
+    if head -c 32 /dev/urandom 2>/dev/null | base64 > "$KEY_FILE.tmp"; then
+      chmod 600 "$KEY_FILE.tmp" 2>/dev/null || true
+      mv "$KEY_FILE.tmp" "$KEY_FILE"
+      dbg "generated cache integrity key"
+    else
+      rm -f "$KEY_FILE.tmp"
+    fi
+  fi
+  if [ -f "$KEY_FILE" ]; then
+    KEY=$(cat "$KEY_FILE" 2>/dev/null || true)
+    if [ -n "$KEY" ]; then
+      HMAC=$(printf '%s\037%s\037%s\037%s' \
+        "${URL_EFFECTIVE:-$URL}" "$ETAG" "$LAST_MOD" "$CONTENT" \
+        | openssl dgst -sha256 -hmac "$KEY" 2>/dev/null \
+        | awk '{print $NF}')
+      dbg "computed hmac len=${#HMAC}"
+    fi
+  fi
+fi
+
 TMP="${CACHE_FILE}.$$.tmp"
 if jq -n \
   --arg url            "$URL" \
@@ -200,8 +249,9 @@ if jq -n \
   --arg etag           "$ETAG" \
   --arg last_modified  "$LAST_MOD" \
   --arg content        "$CONTENT" \
+  --arg hmac           "$HMAC" \
   --argjson fetched_at "$NOW" \
-  '{url: $url, url_effective: $url_effective, prompt: $prompt, etag: $etag, last_modified: $last_modified, content: $content, fetched_at: $fetched_at}' \
+  '{url: $url, url_effective: $url_effective, prompt: $prompt, etag: $etag, last_modified: $last_modified, content: $content, hmac: $hmac, fetched_at: $fetched_at}' \
   > "$TMP"
 then
   chmod 600 "$TMP" 2>/dev/null || true
