@@ -2,21 +2,21 @@
 
 Specialist personas that play a single role with a single perspective on Android changes. Each persona is a Markdown file consumed as a system prompt by your harness (Claude Code, Cursor, Copilot, etc.).
 
-| Persona | Role | Best for |
-|---------|------|----------|
-| [code-reviewer](code-reviewer.md) | Senior Android Engineer | Five-axis review before merge |
-| [security-auditor](security-auditor.md) | Mobile Security Engineer | OWASP Mobile Top 10, hardening review |
-| [test-engineer](test-engineer.md) | Android QA Engineer | Test strategy, coverage analysis, Prove-It pattern |
+| Persona                                 | Role                     | Best for                                           |
+|-----------------------------------------|--------------------------|----------------------------------------------------|
+| [code-reviewer](code-reviewer.md)       | Senior Android Engineer  | Five-axis review before merge                      |
+| [security-auditor](security-auditor.md) | Mobile Security Engineer | OWASP Mobile Top 10, hardening review              |
+| [test-engineer](test-engineer.md)       | Android QA Engineer      | Test strategy, coverage analysis, Prove-It pattern |
 
 ## How personas relate to skills and commands
 
 Three layers, each with a distinct job:
 
-| Layer | What it is | Example | Composition role |
-|-------|-----------|---------|------------------|
-| **Skill** | A workflow with steps and exit criteria | `code-review-and-quality` | The *how* — invoked from inside a persona or command |
-| **Persona** | A role with a perspective and an output format | `code-reviewer` | The *who* — adopts a viewpoint, produces a report |
-| **Command** | A user-facing entry point | `/review`, `/ship` | The *when* — composes personas and skills |
+| Layer       | What it is                                     | Example                   | Composition role                                     |
+|-------------|------------------------------------------------|---------------------------|------------------------------------------------------|
+| **Skill**   | A workflow with steps and exit criteria        | `code-review-and-quality` | The *how* — invoked from inside a persona or command |
+| **Persona** | A role with a perspective and an output format | `code-reviewer`           | The *who* — adopts a viewpoint, produces a report    |
+| **Command** | A user-facing entry point                      | `/review`, `/ship`        | The *when* — composes personas and skills            |
 
 The user (or a slash command) is the orchestrator. **Personas do not call other personas.** Skills are mandatory hops inside a persona's workflow.
 
