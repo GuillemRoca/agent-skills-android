@@ -12,14 +12,14 @@ Work follows a five-phase lifecycle. Each phase has dedicated skills:
 DEFINE → PLAN → BUILD → VERIFY → REVIEW → SHIP
 ```
 
-| Phase | Skills | Purpose |
-|-------|--------|---------|
-| **DEFINE** | `idea-refine`, `spec-driven-development`, `context-engineering` | Sharpen ideas, write specs, set up AI context |
-| **PLAN** | `planning-and-task-breakdown`, `android-architecture` | Break work into tasks, make architecture decisions |
-| **BUILD** | `incremental-implementation`, `test-driven-development`, `android-ui-engineering`, `android-data-persistence`, `api-and-interface-design`, `source-driven-development`, `code-simplification`, `documentation-and-adrs` | Implement incrementally with TDD |
-| **VERIFY** | `android-device-testing`, `android-accessibility`, `debugging-and-error-recovery`, `performance-optimization` | Test, debug, and validate |
-| **REVIEW** | `code-review-and-quality`, `security-and-hardening` | Review quality and security |
-| **SHIP** | `ci-cd-and-automation`, `git-workflow-and-versioning`, `shipping-and-launch`, `deprecation-and-migration` | Automate, version, and release |
+| Phase      | Skills                                                                                                                                                                                                                  | Purpose                                            |
+|------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------|
+| **DEFINE** | `idea-refine`, `spec-driven-development`, `context-engineering`                                                                                                                                                         | Sharpen ideas, write specs, set up AI context      |
+| **PLAN**   | `planning-and-task-breakdown`, `android-architecture`                                                                                                                                                                   | Break work into tasks, make architecture decisions |
+| **BUILD**  | `incremental-implementation`, `test-driven-development`, `android-ui-engineering`, `android-data-persistence`, `api-and-interface-design`, `source-driven-development`, `code-simplification`, `documentation-and-adrs` | Implement incrementally with TDD                   |
+| **VERIFY** | `android-device-testing`, `android-accessibility`, `debugging-and-error-recovery`, `performance-optimization`                                                                                                           | Test, debug, and validate                          |
+| **REVIEW** | `code-review-and-quality`, `security-and-hardening`                                                                                                                                                                     | Review quality and security                        |
+| **SHIP**   | `ci-cd-and-automation`, `git-workflow-and-versioning`, `shipping-and-launch`, `deprecation-and-migration`                                                                                                               | Automate, version, and release                     |
 
 ## Skill Directory Structure
 
@@ -57,14 +57,6 @@ skills/
 
 Each skill follows this structure:
 
-```yaml
----
-name: skill-name-in-kebab-case
-description: Brief description. Use when [trigger conditions].
----
-```
-
-Sections:
 1. **Overview** — what and why
 2. **When to Use** — trigger conditions and exclusions
 3. **Core Process** — numbered steps with Kotlin code examples
@@ -78,25 +70,37 @@ Target: each SKILL.md stays under 500 lines.
 
 Three reusable agent personas in `agents/`:
 
-| Agent | Role | Use When |
-|-------|------|----------|
-| `code-reviewer.md` | Five-axis code review (Correctness, Readability, Architecture, Security, Performance) | Reviewing PRs or self-reviewing |
-| `test-engineer.md` | Test design, coverage analysis, quality evaluation | Designing test suites, finding coverage gaps |
-| `security-auditor.md` | OWASP Mobile Top 10, vulnerability assessment | Security review before release |
+| Agent                 | Role                                                                                  | Use When                                     |
+|-----------------------|---------------------------------------------------------------------------------------|----------------------------------------------|
+| `code-reviewer.md`    | Five-axis code review (Correctness, Readability, Architecture, Security, Performance) | Reviewing PRs or self-reviewing              |
+| `test-engineer.md`    | Test design, coverage analysis, quality evaluation                                    | Designing test suites, finding coverage gaps |
+| `security-auditor.md` | OWASP Mobile Top 10, vulnerability assessment                                         | Security review before release               |
 
-## Slash Commands
+## Orchestration: Personas and Skills
 
-Seven commands map to development phases:
+Three composable layers, each with a distinct job:
 
-| Command | Phase | Skills Used |
-|---------|-------|-------------|
-| `/spec` | DEFINE | `spec-driven-development` |
-| `/plan` | PLAN | `planning-and-task-breakdown` |
-| `/build` | BUILD | `incremental-implementation` + `test-driven-development` |
-| `/test` | VERIFY | `test-driven-development` + `android-device-testing` |
-| `/review` | REVIEW | `code-review-and-quality` + `security-and-hardening` + `performance-optimization` |
-| `/code-simplify` | BUILD | `code-simplification` + `code-review-and-quality` |
-| `/ship` | SHIP | `shipping-and-launch` |
+- **Skills** (`skills/<name>/SKILL.md`) — workflows with steps and exit criteria. The *how*. Mandatory steps when an intent matches.
+- **Personas** (`agents/<role>.md`) — roles with a perspective and an output format. The *who*.
+- **Task Entry Points** — user-facing entry points that trigger the orchestration layer.
+
+**Composition rule:** Junie is the orchestrator. Personas do not invoke other personas. A persona may invoke skills.
+
+The endorsed multi-persona pattern is **parallel fan-out with a merge step** — used during shipping to run `code-reviewer`, `security-auditor`, and `test-engineer` concurrently on the same diff and synthesize their reports into a single go/no-go decision.
+
+## Command Mappings
+
+Instructions map to development phases:
+
+| Phase               | Skills Used                                                                       |
+|---------------------|-----------------------------------------------------------------------------------|
+| Specification       | `spec-driven-development`                                                         |
+| Planning            | `planning-and-task-breakdown`                                                     |
+| Building            | `incremental-implementation` + `test-driven-development`                          |
+| Testing             | `test-driven-development` + `android-device-testing`                              |
+| Reviewing           | `code-review-and-quality` + `security-and-hardening` + `performance-optimization` |
+| Code Simplification | `code-simplification` + `code-review-and-quality`                                 |
+| Shipping            | `shipping-and-launch`                                                             |
 
 ## Reference Checklists
 
@@ -106,40 +110,6 @@ Detailed checklists in `references/`:
 - `security-checklist.md` — OWASP Mobile, Network Security Config, cert pinning, secrets
 - `performance-checklist.md` — Android Vitals, Baseline Profiles, Macrobenchmark, APK size
 - `accessibility-checklist.md` — TalkBack, Accessibility Scanner, touch targets, contrast
-
-## Installation
-
-### Claude Code
-
-```bash
-# 1. Add the marketplace (one-time setup)
-claude plugin marketplace add GuillemRoca/agent-skills-android
-
-# 2. Install the plugin
-claude plugin install agent-skills-android
-```
-
-Restart Claude Code after installation.
-
-To update later, use the fully qualified `plugin@marketplace` form (the short name returns "Plugin not found"):
-
-```bash
-claude plugin update agent-skills-android@agent-skills-android
-```
-
-If the update fails with `Permission denied (publickey)`, the marketplace is cloning via SSH without a usable key. Either [add an SSH key to GitHub](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account) or rewrite SSH fetches to HTTPS:
-
-```bash
-git config --global url."https://github.com/".insteadOf "git@github.com:"
-```
-
-### Manual Setup
-
-1. Clone this repo alongside your project
-2. Reference skills in your `CLAUDE.md`:
-   ```
-   See ../agent-skills-android/skills/ for Android engineering workflow skills.
-   ```
 
 ## Core Principles
 
