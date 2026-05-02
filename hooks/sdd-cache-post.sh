@@ -21,18 +21,43 @@ if [ -t 0 ]; then INPUT="{}"; else INPUT=$(cat); fi
 
 # Debug logging: active when SDD_CACHE_DEBUG=1 is set, or when a sentinel
 # file exists at .claude/sdd-cache/.debug. Toggle with `touch` / `rm`.
+# Log auto-truncates past 10 MiB. URLs are logged without query strings so
+# OAuth / signed-URL credentials don't land on disk.
 dbg() {
   local dir="${CLAUDE_PROJECT_DIR:-$PWD}/.claude/sdd-cache"
   [ "${SDD_CACHE_DEBUG:-0}" = "1" ] || [ -f "$dir/.debug" ] || return 0
   mkdir -p "$dir"
-  printf '%s [post] %s\n' "$(date -u +%FT%TZ)" "$*" >> "$dir/.debug.log"
+  local log="$dir/.debug.log"
+  if [ -f "$log" ] && [ "$(wc -c <"$log" 2>/dev/null || echo 0)" -gt 10485760 ]; then
+    : > "$log"
+  fi
+  printf '%s [post] %s\n' "$(date -u +%FT%TZ)" "$*" >> "$log"
 }
-dbg "fired, input=$(printf '%s' "$INPUT" | head -c 400)"
+redact_url() { printf '%s' "${1%%\?*}"; }
+dbg "fired"
 
 URL=$(printf '%s'    "$INPUT" | jq -r '.tool_input.url    // empty' 2>/dev/null || true)
 PROMPT=$(printf '%s' "$INPUT" | jq -r '.tool_input.prompt // empty' 2>/dev/null || true)
 if [ -z "$URL" ]; then dbg "no url in tool_input, exit"; exit 0; fi
-dbg "url=$URL prompt=$(printf '%s' "$PROMPT" | head -c 80)"
+dbg "url=$(redact_url "$URL") prompt-len=${#PROMPT}"
+
+# SSRF defense. Reject obviously-private hosts before any network I/O.
+URL_HOST=$(printf '%s' "$URL" | sed -E 's|^[a-z]+://([^/:]+).*|\1|' | tr '[:upper:]' '[:lower:]')
+case "$URL_HOST" in
+  localhost|127.*|0.0.0.0|169.254.*|10.*|::1|fe80:*|fc00:*|fd*:*) dbg "private host, skip caching"; exit 0 ;;
+  192.168.*) dbg "private host, skip caching"; exit 0 ;;
+  172.1[6-9].*|172.2[0-9].*|172.3[01].*) dbg "private host, skip caching"; exit 0 ;;
+esac
+
+# Truncate the persisted prompt. Full prompts are useful for "is this
+# reading still relevant" but anything beyond a couple of sentences risks
+# capturing inadvertently quoted secrets ("compare against API key foo=...")
+# that end up on disk and re-surface to future agents.
+PROMPT_MAX=400
+if [ "${#PROMPT}" -gt "$PROMPT_MAX" ]; then
+  PROMPT="${PROMPT:0:$PROMPT_MAX}…"
+  dbg "prompt truncated to $PROMPT_MAX chars"
+fi
 
 # WebFetch tool_response shape (Claude Code as of 2026-04): an object with
 # keys bytes, code, codeText, durationMs, result, url — content lives at
@@ -58,7 +83,17 @@ CONTENT=$(printf '%s' "$INPUT" | jq -r '
 ' 2>/dev/null || true)
 
 if [ -z "$CONTENT" ]; then
-  dbg "could not extract content from tool_response, exit (shape unknown)"
+  dbg "WARN: could not extract content from tool_response (shape may have changed)"
+  exit 0
+fi
+
+# Reject oversized bodies. Holding multi-MiB content in a shell variable
+# slows everything down, blows past the hook's 10s timeout when re-emitted
+# on a hit, and isn't useful for doc-page caching. 1 MiB covers every
+# realistic Android/Kotlin/Material doc page with headroom.
+CONTENT_MAX=1048576
+if [ "${#CONTENT}" -gt "$CONTENT_MAX" ]; then
+  dbg "content size ${#CONTENT} exceeds cap $CONTENT_MAX, skip caching"
   exit 0
 fi
 dbg "extracted content bytes=${#CONTENT}"
@@ -74,40 +109,83 @@ hash_key() {
 
 CACHE_DIR="${CLAUDE_PROJECT_DIR:-$PWD}/.claude/sdd-cache"
 mkdir -p "$CACHE_DIR"
+chmod 700 "$CACHE_DIR" 2>/dev/null || true
 CACHE_FILE="$CACHE_DIR/$(hash_key "$URL").json"
 
-# Capture validators from the origin. Follow redirects so they match the
-# URL the agent actually talked to. Strip CR so awk's paragraph mode
-# recognises blank separators between response blocks on a redirect chain.
-HEAD_OUT=$(curl -sI -L --max-time 5 "$URL" 2>/dev/null | tr -d '\r' || true)
-
-# Take only the final response's headers (last paragraph) to avoid picking
-# up validators from intermediate 301/302 hops.
-FINAL_HEADERS=$(printf '%s' "$HEAD_OUT" | awk '
-  BEGIN { RS = ""; last = "" }
-  { last = $0 }
-  END { print last }
-')
+# Capture validators + final URL from the origin. Try HEAD first (cheap);
+# fall back to GET-with-discarded-body if the origin strips validators on
+# HEAD (some CDNs do, including parts of developer.android.com behind GFE).
+# --proto / --proto-redir block scheme escalation on malicious redirects.
+URL_EFFECTIVE=""
+fetch_headers() {
+  local method="$1"  # HEAD or GET
+  local headers_out url_effective_out
+  if [ "$method" = "HEAD" ]; then
+    headers_out=$(curl -sI -L --max-time 5 \
+      --proto '=https' --proto-redir '=https' \
+      -w '\n%{url_effective}\n' \
+      "$URL" 2>/dev/null | tr -d '\r' || true)
+  else
+    headers_out=$(curl -s -L --max-time 5 \
+      --proto '=https' --proto-redir '=https' \
+      -o /dev/null -D - \
+      -w '\n%{url_effective}\n' \
+      "$URL" 2>/dev/null | tr -d '\r' || true)
+  fi
+  # url_effective comes after the headers (own line); split it off.
+  url_effective_out=$(printf '%s' "$headers_out" | awk 'END{print}')
+  printf '%s' "$headers_out" | sed '$d'
+  URL_EFFECTIVE_LATEST="$url_effective_out"
+}
 
 extract_header() {
-  local name="$1"
-  printf '%s' "$FINAL_HEADERS" | awk -v h="$name" '
+  local name="$1" headers_in="$2"
+  printf '%s' "$headers_in" | awk -v h="$name" '
     BEGIN { FS = ":" }
     tolower($1) == tolower(h) {
       sub(/^[^:]*:[ \t]*/, "")
       sub(/[ \t]+$/, "")
+      gsub(/[\r\n\t]/, "")  # defense-in-depth: strip header-injection chars
       print
       exit
     }
   '
 }
 
-ETAG=$(extract_header "ETag")
-LAST_MOD=$(extract_header "Last-Modified")
-dbg "HEAD etag=$ETAG last_modified=$LAST_MOD"
+# Take only the final response's headers (last paragraph) to avoid picking
+# up validators from intermediate 301/302 hops.
+final_headers() {
+  printf '%s' "$1" | awk '
+    BEGIN { RS = ""; last = "" }
+    { last = $0 }
+    END { print last }
+  '
+}
+
+URL_EFFECTIVE_LATEST=""
+HEAD_OUT=$(fetch_headers "HEAD")
+FINAL=$(final_headers "$HEAD_OUT")
+ETAG=$(extract_header "ETag" "$FINAL")
+LAST_MOD=$(extract_header "Last-Modified" "$FINAL")
+URL_EFFECTIVE="$URL_EFFECTIVE_LATEST"
+dbg "HEAD etag-len=${#ETAG} last_modified-len=${#LAST_MOD}"
 
 if [ -z "$ETAG" ] && [ -z "$LAST_MOD" ]; then
-  dbg "no validator from origin, removing any stale entry and exit"
+  dbg "HEAD returned no validators, falling back to GET"
+  GET_OUT=$(fetch_headers "GET")
+  FINAL=$(final_headers "$GET_OUT")
+  ETAG=$(extract_header "ETag" "$FINAL")
+  LAST_MOD=$(extract_header "Last-Modified" "$FINAL")
+  URL_EFFECTIVE="$URL_EFFECTIVE_LATEST"
+  dbg "GET fallback etag-len=${#ETAG} last_modified-len=${#LAST_MOD}"
+fi
+
+# Sanity-cap validator lengths to defeat malformed/hostile origin headers.
+ETAG="${ETAG:0:512}"
+LAST_MOD="${LAST_MOD:0:128}"
+
+if [ -z "$ETAG" ] && [ -z "$LAST_MOD" ]; then
+  dbg "no validator from origin (HEAD or GET), removing any stale entry and exit"
   rm -f "$CACHE_FILE"
   exit 0
 fi
@@ -116,17 +194,19 @@ NOW=$(date +%s)
 
 TMP="${CACHE_FILE}.$$.tmp"
 if jq -n \
-  --arg url           "$URL" \
-  --arg prompt        "$PROMPT" \
-  --arg etag          "$ETAG" \
-  --arg last_modified "$LAST_MOD" \
-  --arg content       "$CONTENT" \
+  --arg url            "$URL" \
+  --arg url_effective  "${URL_EFFECTIVE:-$URL}" \
+  --arg prompt         "$PROMPT" \
+  --arg etag           "$ETAG" \
+  --arg last_modified  "$LAST_MOD" \
+  --arg content        "$CONTENT" \
   --argjson fetched_at "$NOW" \
-  '{url: $url, prompt: $prompt, etag: $etag, last_modified: $last_modified, content: $content, fetched_at: $fetched_at}' \
+  '{url: $url, url_effective: $url_effective, prompt: $prompt, etag: $etag, last_modified: $last_modified, content: $content, fetched_at: $fetched_at}' \
   > "$TMP"
 then
+  chmod 600 "$TMP" 2>/dev/null || true
   mv "$TMP" "$CACHE_FILE"
-  dbg "wrote cache file $CACHE_FILE"
+  dbg "wrote cache file"
 else
   rm -f "$TMP"
   dbg "jq failed, temp cleaned"

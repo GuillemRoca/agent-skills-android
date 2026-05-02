@@ -41,6 +41,8 @@ Otherwise, default to fan-out. `/ship` is designed for production-bound changes 
 
 Once all three reports are back, the main agent (not a sub-persona) synthesizes them. Run these checks directly — do not delegate them back to subagents.
 
+> **Non-Android repos.** Sections 1–5 below are scoped to Android app releases. When running `/ship` against a docs-only PR, a Claude Code plugin, a CLI tool, or any repo without `gradlew`/`AndroidManifest.xml`, skip the Gradle commands, Android Vitals targets, accessibility checks, and Play Store gates — they will fail spuriously. Apply the spirit (correctness, security, no secrets, clean release) to whatever surface the repo actually ships, and report which sections were N/A.
+
 ### 1. Code Quality
 - Aggregate Critical/Important findings from `code-reviewer`
 - Resolve duplicates between reviewers

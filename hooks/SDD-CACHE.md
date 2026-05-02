@@ -62,14 +62,18 @@ One cache entry per URL, stored as JSON in `.claude/sdd-cache/<sha>.json`:
 
 | Event | Action |
 |---|---|
-| `PreToolUse WebFetch` | If an entry exists, sends a `HEAD` request with `If-None-Match` / `If-Modified-Since`. On `304`, blocks the fetch and returns the cached content to the agent via stderr, with the original prompt surfaced as metadata. Otherwise allows the fetch. |
-| `PostToolUse WebFetch` | Captures the response, issues a `HEAD` request to record the current `ETag` / `Last-Modified`, and stores `{url, prompt, etag, last_modified, content, fetched_at}`. |
+| `PreToolUse WebFetch` | If an entry exists, sends a conditional `GET` (with body discarded) to the URL the post hook recorded after redirects, with `If-None-Match` / `If-Modified-Since`. On `304`, blocks the fetch and returns the cached content to the agent via stderr, with the original prompt surfaced as metadata. Otherwise allows the fetch. |
+| `PostToolUse WebFetch` | Captures the response, issues a `HEAD` to record the current `ETag` / `Last-Modified` (falling back to a discarded-body `GET` when the origin strips validators on `HEAD`), records the post-redirect URL, and stores `{url, url_effective, prompt, etag, last_modified, content, fetched_at}`. |
 
 **Freshness rules:**
 
 - Entry is served only if the origin confirms `304 Not Modified`.
 - Entries without an `ETag` or `Last-Modified` header are never cached — without a validator, the hook cannot verify freshness later, and caching would mean trusting memory.
+- Any non-`304` response (including network errors, `4xx`, `5xx`, redirects to a different scheme/host than `https`) bypasses the cache and lets `WebFetch` proceed normally.
+- Revalidation runs against the post-redirect URL the post hook recorded, not the URL the agent asked for. Prevents false `304`s when an upstream `301` chain changes between sessions.
 - Cache key is `sha256(url)`. The same URL asked with a different prompt hits the same entry; the cached body reflects the prompt used on the first fetch, and that prompt is shown alongside the hit so the agent can decide whether to re-use or re-fetch manually.
+- Cached prompts are truncated to 400 characters before storage. The hit message shows the truncated form.
+- Bodies larger than 1 MiB are not cached.
 
 **What the agent sees:**
 
@@ -136,7 +140,41 @@ echo '{"tool_input":{"url":"...", "prompt":"..."}}' | bash hooks/sdd-cache-pre.s
 echo "exit=$?"   # expect 0 (fetch allowed through)
 ```
 
-### 4. Debugging
+### 4. Negative-path recipes
+
+These exercise the freshness-strict invariants the cache's value rests on. Each should produce the documented behavior; any deviation is a regression.
+
+```bash
+# (a) Corrupt cache file → graceful bypass (must not error to the agent)
+URL="https://kotlinlang.org/docs/coroutines-overview.html"
+KEY=$(printf '%s' "$URL" | shasum -a 256 | cut -c1-32)
+mkdir -p .claude/sdd-cache && echo "garbage" > ".claude/sdd-cache/$KEY.json"
+echo "{\"tool_input\":{\"url\":\"$URL\",\"prompt\":\"x\"}}" | bash hooks/sdd-cache-pre.sh
+echo "exit=$?"   # expect 0
+rm -f ".claude/sdd-cache/$KEY.json"
+
+# (b) Network unreachable → fetch-through within timeout
+URL="https://10.255.255.1/no-route"   # private + unroutable
+time (echo "{\"tool_input\":{\"url\":\"$URL\",\"prompt\":\"x\"}}" | bash hooks/sdd-cache-pre.sh)
+# expect: exit 0 within ~1s (private-host guard) — does not hit network at all
+
+# (c) Private-host SSRF guard
+echo '{"tool_input":{"url":"http://169.254.169.254/latest/meta-data/","prompt":"x"}}' \
+  | bash hooks/sdd-cache-pre.sh; echo "exit=$?"   # expect 0, no curl issued
+echo '{"tool_input":{"url":"https://localhost:9200/_cat","prompt":"x"}}' \
+  | bash hooks/sdd-cache-post.sh; echo "exit=$?"  # expect 0, no entry written
+
+# (d) Concurrent post-hooks for the same URL → one valid file remains
+URL="https://kotlinlang.org/docs/coroutines-overview.html"
+PAYLOAD="{\"tool_input\":{\"url\":\"$URL\",\"prompt\":\"a\"},\"tool_response\":\"body\"}"
+( echo "$PAYLOAD" | bash hooks/sdd-cache-post.sh ) &
+( echo "$PAYLOAD" | bash hooks/sdd-cache-post.sh ) &
+wait
+ls .claude/sdd-cache/                        # expect exactly one *.json file
+jq . .claude/sdd-cache/*.json >/dev/null && echo "ok"   # expect "ok"
+```
+
+### 5. Debugging
 
 Both hooks write timestamped events to `.claude/sdd-cache/.debug.log` when debug mode is on. Enable it with either:
 
@@ -151,11 +189,28 @@ mkdir -p .claude/sdd-cache && touch .claude/sdd-cache/.debug
 
 The log captures URL, detected `tool_response` shape, HEAD status, and why each invocation hit or missed. Useful when a cache miss looks unexpected (typically: the origin stopped emitting validators).
 
+## Security model
+
+Hooks execute with the **user's full shell privileges** on every `WebFetch`. Anything that can modify these scripts — a malicious PR merged into the plugin, a `git pull` from a compromised fork, a marketplace update to a tampered tag — gains arbitrary code execution at the moment a `WebFetch` fires. Review the scripts before enabling, pin to a tagged release if your environment requires it, and enable the cache only in projects where you would already trust a `postinstall` script.
+
+The hook is intentionally narrow:
+
+- **Scheme allowlist.** Both hooks pass `--proto '=https' --proto-redir '=https'` to `curl`, so an `https` URL that redirects to `http://`, `file://`, `gopher://`, or any non-`https` scheme is dropped.
+- **Private-IP guard.** Hosts matching `localhost`, `127.*`, `10.*`, `192.168.*`, `172.16-31.*`, `169.254.*`, `::1`, `fc00:*`, `fe80:*` skip caching and revalidation entirely. DNS rebinding can defeat name-based checks; the scheme-redir guard is the second line of defense.
+- **No code in cache.** The `<sha>.json` files are read with `jq` and emitted via `printf '%s'` — never `eval`'d, sourced, or interpolated unquoted. A poisoned cache file can mislead the *agent* (prompt-injection-via-doc-body), but not the shell.
+- **Cache files are `0600`, directory `0700`.** Reduces the surface for another local process implanting prompt-injection content under your home directory.
+
+Things the hook does **not** defend against:
+
+- **Prompt persistence.** `tool_input.prompt` is stored verbatim (truncated to 400 chars) in `<sha>.json` and surfaced to the next agent on a hit. If you embed secrets in `WebFetch` prompts (`"compare against API key foo=…"`), they land on disk and cross-session-leak. Avoid quoting secrets in fetch prompts.
+- **Debug-log persistence.** When debug mode is on, the redacted URL (no query string), prompt length, status codes, and validator lengths are appended to `.claude/sdd-cache/.debug.log` (auto-truncated past 10 MiB). Enable debug only when investigating a miss; disable when done.
+- **Cache poisoning by agent context.** A `WebFetch` against an attacker-controlled doc URL caches that content under the same trust framing as legit docs. Mitigation: don't enable the cache in projects where agents fetch arbitrary user-supplied URLs.
+
 ## Known limitations
 
 - **Body is prompt-shaped.** A hit returns the earlier agent's reading of the page, with the original prompt surfaced so the current agent can decide whether it applies. If it doesn't, delete the file under `.claude/sdd-cache/` to force a re-fetch.
-- **Every cache write costs an extra HEAD.** Claude Code doesn't expose the response headers that `WebFetch` already received, so the post hook re-queries the origin to capture `ETag` / `Last-Modified`. One extra roundtrip per miss — the price of keeping this a pure hook with no core changes.
-- **Servers without `ETag` or `Last-Modified` are never cached.** Most official Android/Jetpack/Kotlin doc pages emit validators (`developer.android.com`, `kotlinlang.org`, `material.io`). Sites that don't are always re-fetched.
+- **Every cache write costs at least one extra request.** Claude Code doesn't expose the response headers that `WebFetch` already received, so the post hook re-queries the origin to capture `ETag` / `Last-Modified`. `HEAD` first; falls back to a discarded-body `GET` when the origin strips validators on `HEAD` (parts of `developer.android.com` behind Google Frontend do this). The post hook is `async: true` so the latency doesn't reach the user.
+- **Servers without `ETag` or `Last-Modified` on either `HEAD` or `GET` are never cached.** Most official Android/Jetpack/Kotlin doc pages emit validators (`developer.android.com`, `kotlinlang.org`, `material.io`). Sites that don't are always re-fetched.
 - **A misbehaving server can serve a wrong `304`.** That's a server bug to diagnose, not a cache invariant to defend against; we don't paper over it with a TTL. Delete the entry if you spot a stale one.
 - **Cache is local and per-project.** There is no team-wide shared cache. Adding one would require a signed-content-addressable storage layer, which is out of scope.
 

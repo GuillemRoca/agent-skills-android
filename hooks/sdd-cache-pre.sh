@@ -26,17 +26,34 @@ if [ -t 0 ]; then INPUT="{}"; else INPUT=$(cat); fi
 
 # Debug logging: active when SDD_CACHE_DEBUG=1 is set, or when a sentinel
 # file exists at .claude/sdd-cache/.debug. Toggle with `touch` / `rm`.
+# Log auto-truncates past 10 MiB to prevent unbounded growth on long sessions
+# with debug left on. URLs are logged with query strings stripped so OAuth /
+# signed-URL credentials don't land on disk.
 dbg() {
   local dir="${CLAUDE_PROJECT_DIR:-$PWD}/.claude/sdd-cache"
   [ "${SDD_CACHE_DEBUG:-0}" = "1" ] || [ -f "$dir/.debug" ] || return 0
   mkdir -p "$dir"
-  printf '%s [pre]  %s\n' "$(date -u +%FT%TZ)" "$*" >> "$dir/.debug.log"
+  local log="$dir/.debug.log"
+  if [ -f "$log" ] && [ "$(wc -c <"$log" 2>/dev/null || echo 0)" -gt 10485760 ]; then
+    : > "$log"
+  fi
+  printf '%s [pre]  %s\n' "$(date -u +%FT%TZ)" "$*" >> "$log"
 }
+redact_url() { printf '%s' "${1%%\?*}"; }
 dbg "fired"
 
 URL=$(printf '%s' "$INPUT" | jq -r '.tool_input.url // empty' 2>/dev/null || true)
 if [ -z "$URL" ]; then dbg "no url in tool_input, exit"; exit 0; fi
-dbg "url=$URL"
+dbg "url=$(redact_url "$URL")"
+
+# SSRF defense. Reject obviously-private hosts before any network I/O.
+# DNS rebinding can defeat this; --proto-redir below is the second line.
+URL_HOST=$(printf '%s' "$URL" | sed -E 's|^[a-z]+://([^/:]+).*|\1|' | tr '[:upper:]' '[:lower:]')
+case "$URL_HOST" in
+  localhost|127.*|0.0.0.0|169.254.*|10.*|::1|fe80:*|fc00:*|fd*:*) dbg "private host, bypass"; exit 0 ;;
+  192.168.*) dbg "private host, bypass"; exit 0 ;;
+  172.1[6-9].*|172.2[0-9].*|172.3[01].*) dbg "private host, bypass"; exit 0 ;;
+esac
 
 # Cache key is sha256(URL), truncated to 128 bits.
 hash_key() {
@@ -57,22 +74,35 @@ FETCHED_AT=$(jq -r '.fetched_at // 0' "$CACHE_FILE" 2>/dev/null || echo 0)
 ORIGINAL_PROMPT=$(jq -r '.prompt // empty' "$CACHE_FILE" 2>/dev/null || true)
 ETAG=$(jq -r '.etag // empty' "$CACHE_FILE" 2>/dev/null || true)
 LAST_MOD=$(jq -r '.last_modified // empty' "$CACHE_FILE" 2>/dev/null || true)
+URL_EFFECTIVE=$(jq -r '.url_effective // empty' "$CACHE_FILE" 2>/dev/null || true)
 
 # No validator means we cannot verify freshness — never serve from cache.
+# (Should be unreachable: post hook refuses to write entries without
+# validators. If this fires, the cache file was corrupted or hand-edited.)
 if [ -z "$ETAG" ] && [ -z "$LAST_MOD" ]; then
-  dbg "cached entry has no etag/last-modified, cannot revalidate, bypass"
+  dbg "WARN: cached entry missing validators (post-hook bug or hand-edited file), bypass"
   exit 0
 fi
+
+# Revalidate against the URL the post hook actually saw after redirects, if
+# we recorded one. Falls back to the agent-requested URL for cache entries
+# written before url_effective was tracked.
+REVAL_URL="${URL_EFFECTIVE:-$URL}"
 
 HEADERS=()
 [ -n "$ETAG" ]     && HEADERS+=(-H "If-None-Match: $ETAG")
 [ -n "$LAST_MOD" ] && HEADERS+=(-H "If-Modified-Since: $LAST_MOD")
 
-STATUS=$(curl -sI -o /dev/null -w "%{http_code}" \
-  --max-time 5 -L \
+# Conditional GET (not HEAD) because some CDNs strip validators on HEAD or
+# return 405. Body is discarded; on 304 there's no body anyway.
+# --proto / --proto-redir block scheme escalation (https→file/ftp/etc) on
+# malicious redirects; complements the host-based private-IP check above.
+STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+  --max-time 3 -L \
+  --proto '=https' --proto-redir '=https' \
   "${HEADERS[@]}" \
-  "$URL" 2>/dev/null || echo "000")
-dbg "revalidation HEAD status=$STATUS"
+  "$REVAL_URL" 2>/dev/null || echo "000")
+dbg "revalidation GET status=$STATUS"
 
 if [ "$STATUS" != "304" ]; then
   dbg "not 304, letting WebFetch proceed"
