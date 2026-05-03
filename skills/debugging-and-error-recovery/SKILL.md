@@ -39,6 +39,16 @@ description: >-
    Frequency: Every time / ~30% of the time
    ```
 
+   When the `android` CLI is available, use it for the fastest possible state capture before doing anything else:
+
+   ```bash
+   android info                                     # SDK location, JDK, env (rules out wrong-toolchain bugs)
+   android screen capture -o repro.png              # what the user sees right now
+   android layout --pretty --output=repro.json      # full UI tree (resource-ids, text, bounds, role)
+   ```
+
+   Three artifacts in <5 seconds, pre-debugger. Attach them to the bug report or commit them to a `repro/` scratch dir before iterating. See `references/android-cli-reference.md`.
+
 ### Step 2: Localize
 
 3. **Read the error output carefully:**
