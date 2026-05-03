@@ -225,18 +225,43 @@ emulator -avd Pixel_7_API_35 -no-window -no-audio -gpu swiftshader_indirect
    - Latest stable (verify forward compatibility)
    - Key breakpoints: API 26 (minSdk common), API 31 (S changes), API 33 (notification permission), API 34 (photo picker)
 
-### Step 6: Layout Inspector
+### Step 6: `android` CLI for Deploy and Layout Assertions
 
-10. **Use Layout Inspector to debug:**
+10. **Use `android` CLI as a thin wrapper around `adb` + `avdmanager` + `emulator` when available** (probe with `android --version`; fall back to step 4/5 commands if absent):
+
+    ```bash
+    # Lifecycle: emulator → install → run → inspect
+    android emulator list
+    android emulator start --name Pixel_7_API_35
+    android run --apks=app/build/outputs/apk/debug/app-debug.apk
+    android describe                              # locate built artifacts (JSON)
+    ```
+
+    `android run` accepts a comma-separated APK list and an `--activity` flag; preferable to `adb install -r` + `am start` when you want a single deploy step that resolves the launcher activity automatically.
+
+11. **Use `android layout` for state-change assertions** (faster than re-running an instrumented test for one-off checks):
+
+    ```bash
+    # Snapshot before action, then diff after to see only what changed
+    android layout --pretty --output=before.json
+    adb shell input tap 540 1200       # perform the action
+    android layout --diff               # only nodes added/changed/removed since last snapshot
+    ```
+
+    Useful during test authoring: lets you discover the exact `resource-id`, `text`, and `bounds` of the elements your test should assert on, without guessing from a screenshot. See `references/android-cli-reference.md`.
+
+### Step 7: Layout Inspector
+
+12. **Use Layout Inspector to debug:**
     - Open via Android Studio → Tools → Layout Inspector
     - Inspect Compose hierarchy and recomposition counts
     - Verify accessibility properties (content descriptions, roles)
     - Check padding, margins, and alignment
     - Compare with design specs
 
-### Step 7: Test Organization
+### Step 8: Test Organization
 
-11. **Test pyramid on Android:**
+13. **Test pyramid on Android:**
 
 ```
     /‾‾‾‾‾‾‾‾‾\

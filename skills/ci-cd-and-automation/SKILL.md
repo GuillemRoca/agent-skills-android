@@ -179,6 +179,19 @@ org.gradle.jvmargs=-Xmx4g -XX:+UseParallelGC
     script: ./gradlew connectedAndroidTest
 ```
 
+When the `android` CLI is present in the runner image, `android sdk install` is a leaner alternative to `setup-android` for declarative platform/build-tools provisioning:
+
+```yaml
+- name: Install Android platforms
+  run: |
+    android sdk install \
+      platforms/android-35 \
+      build-tools/35.0.0 \
+      platform-tools
+```
+
+Stick with `reactivecircus/android-emulator-runner` for the emulator itself — `android emulator` is **disabled on Windows** and the runner action handles snapshot caching, hardware acceleration, and animation disabling that you'd otherwise rebuild by hand. See `references/android-cli-reference.md`.
+
 6. **Test sharding for large test suites:**
 
 ```yaml

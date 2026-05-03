@@ -61,9 +61,29 @@ val state = remember { mutableStateOf(0) }
 
 `kb://` URIs are accepted at priority 1 in the `source-driven-development` source authority hierarchy, alongside `developer.android.com/...` URLs.
 
+## `android skills` — Discover Catalog Skills
+
+Browse and install skills from the official Android skills catalog at https://github.com/android/skills. `android init` plants the `android-cli` skill into every detected agent harness (`~/.claude/skills/`, `~/.gemini/skills/`, `~/.codex/skills/`, `~/.copilot/skills/`, `~/.junie/skills/`, `~/.config/opencode/skills/`); `android skills` is how you discover and add the rest.
+
+```bash
+android skills list                   # installed skills
+android skills find <keyword>         # search the catalog by keyword
+android skills add <name>             # install a catalog skill (lands in each harness dir)
+android skills remove <name>          # uninstall
+```
+
+Catalog skills install user-globally per harness. To vendor one into *this* repo so other contributors get it via `claude plugin install`, copy from the harness directory into `skills/`:
+
+```bash
+android skills add <name>
+cp -r ~/.claude/skills/<name> skills/<name>
+```
+
+Then register in `AGENTS.md` (skill directory tree) and `README.md` (phase table). Validate the SKILL.md against the anatomy in `CONTRIBUTING.md` before merging — upstream catalog skills don't always follow this repo's six-section structure and may need adaptation.
+
 ## Other CLI Commands (not prescribed)
 
-The CLI also provides `run`, `emulator`, `sdk`, `create`, `describe`, `screen`, and `skills` subcommands. This repo does not prescribe them — existing `adb`, `gradlew`, `sdkmanager`, `avdmanager`, `emulator`, and `reactivecircus/android-emulator-runner` workflows remain canonical in `android-device-testing`, `debugging-and-error-recovery`, and `ci-cd-and-automation`.
+The CLI also provides `run`, `emulator`, `sdk`, `create`, `describe`, and `screen` subcommands. This repo does not prescribe them as standalone — instead, the relevant skills (`android-device-testing`, `debugging-and-error-recovery`, `ci-cd-and-automation`) reference them where they earn their keep alongside existing `adb`/`gradlew`/`sdkmanager`/`avdmanager`/`emulator`/`reactivecircus/android-emulator-runner` workflows.
 
 See https://developer.android.com/tools/agents/android-cli for the full surface.
 

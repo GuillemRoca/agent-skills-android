@@ -266,9 +266,25 @@ Row {
     - Run on every screen before shipping
     - Fixes: touch target size, contrast ratio, content descriptions
 
-    For programmatic assertions, `android layout --pretty` returns JSON with `content-desc`, `role`, and `bounds` per node — useful for scripting checks (e.g. unlabeled buttons, touch targets < 48dp). See `references/android-cli-reference.md`.
+11. **`android layout` for scriptable accessibility assertions:**
 
-11. **Compose UI tests for accessibility:**
+    `android layout --pretty` returns JSON with `content-desc`, `role`, and `bounds` per node — turn it into automated scans you can run from a script or CI step.
+
+    ```bash
+    # Fail the build if any Button is missing content-desc
+    android layout --pretty \
+      | jq -e '.nodes[] | select(.role=="Button" and ((.["content-desc"] // "") == ""))' \
+      && echo "FAIL: unlabeled button" && exit 1
+
+    # Flag touch targets smaller than 48dp (assuming density-converted bounds)
+    android layout --pretty \
+      | jq '.nodes[] | select(.role=="Button") | {id: .["resource-id"], bounds}' \
+      | review_target_sizes.sh
+    ```
+
+    Use `android layout --diff` after an interaction to inspect only what changed — keeps assertions tight when verifying live regions, error toasts, or focus shifts. When `layout` returns nothing useful (WebView, animation), fall back to `android screen capture --annotate -o screen.png` and visually verify focus order. See `references/android-cli-reference.md`.
+
+12. **Compose UI tests for accessibility:**
 
 ```kotlin
 @Test

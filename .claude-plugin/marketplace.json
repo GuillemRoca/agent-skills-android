@@ -6,7 +6,7 @@
   "plugins": [
     {
       "name": "agent-skills-android",
-      "version": "1.2.0",
+      "version": "1.3.0",
       "description": "Production-grade Android engineering skills for AI coding agents. Covers the full development lifecycle from spec to Play Store: Kotlin, Jetpack Compose, Gradle, Android SDK, and the Android ecosystem.",
       "source": {
         "source": "github",
