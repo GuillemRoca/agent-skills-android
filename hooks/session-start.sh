@@ -1,21 +1,22 @@
-#!/usr/bin/env bash
-# Session-start hook: injects the using-agent-skills meta-skill into context
-set -euo pipefail
+#!/bin/bash
+# agent-skills (Android) session start hook
+# Injects the using-agent-skills meta-skill into every new session.
 
 PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
 META_SKILL="$PLUGIN_ROOT/skills/using-agent-skills/SKILL.md"
 
-if [[ -f "$META_SKILL" ]]; then
+if ! command -v jq >/dev/null 2>&1; then
+  echo '{"priority": "INFO", "message": "agent-skills (Android): jq is required for the session-start hook but was not found on PATH. Install jq (e.g. `brew install jq` or `apt-get install jq`) to enable meta-skill injection. Skills remain available individually under skills/*/SKILL.md."}'
+  exit 0
+fi
+
+if [ -f "$META_SKILL" ]; then
   CONTENT=$(cat "$META_SKILL")
-  cat <<EOF
-{
-  "message": "Agent Skills (Android) loaded. Use the skill discovery flowchart below to find the right skill for your task.\n\n$CONTENT"
-}
-EOF
+  jq -cn \
+    --arg message "Agent Skills (Android) loaded. Use the skill discovery flowchart below to find the right skill for your task.
+
+$CONTENT" \
+    '{priority: "IMPORTANT", message: $message}'
 else
-  cat <<EOF
-{
-  "message": "Agent Skills (Android) plugin active but meta-skill not found at $META_SKILL. Skills are in skills/*/SKILL.md."
-}
-EOF
+  echo '{"priority": "INFO", "message": "agent-skills (Android): using-agent-skills meta-skill not found at '"$META_SKILL"'. Skills may still be available individually."}'
 fi
