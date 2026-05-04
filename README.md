@@ -111,8 +111,8 @@ Seven slash commands provide quick access:
 **Marketplace install:**
 
 ```bash
-claude plugin marketplace add GuillemRoca/agent-skills-android
-claude plugin install agent-skills-android@agent-skills-android
+claude plugin marketplace add GuillemRoca/claude-plugins
+claude plugin install agent-skills-android@guillemroca
 ```
 
 Restart Claude Code. Skills, slash commands (`/spec`, `/plan`, `/build`, `/test`, `/review`, `/ship`), and hooks are available immediately.
@@ -120,13 +120,13 @@ Restart Claude Code. Skills, slash commands (`/spec`, `/plan`, `/build`, `/test`
 To update later (use the fully qualified `plugin@marketplace` form — the short name returns "Plugin not found"):
 
 ```bash
-claude plugin update agent-skills-android@agent-skills-android
+claude plugin update agent-skills-android@guillemroca
 ```
 
 > **Update fails with an SSH / "Permission denied (publickey)" error?** This is the most common cause. The marketplace clones repos via SSH. If you don't have SSH keys set up on GitHub, either [add your SSH key](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account) or use the full HTTPS URL to force the HTTPS cloning:
 > ```bash
-> /plugin marketplace add https://github.com/GuillemRoca/agent-skills-android.git
-> /plugin install agent-skills-android@agent-skills-android
+> /plugin marketplace add https://github.com/GuillemRoca/claude-plugins.git
+> /plugin install agent-skills-android@guillemroca
 > ```
 
 </details>
