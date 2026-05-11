@@ -1,7 +1,7 @@
 {
   "name": "agent-skills-android",
   "description": "Production-grade Android engineering skills for AI coding agents. Covers the full development lifecycle from spec to Play Store: Kotlin, Jetpack Compose, Gradle, Android SDK, and the Android ecosystem.",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "author": {
     "name": "Guillem Roca"
   },
@@ -16,5 +16,13 @@
     "tdd",
     "architecture",
     "workflows"
-  ]
+  ],
+  "commands": "./.claude/commands",
+  "skills": "./skills",
+  "agents": [
+    "./agents/code-reviewer.md",
+    "./agents/security-auditor.md",
+    "./agents/test-engineer.md"
+  ],
+  "hooks": "./hooks/hooks.json"
 }
