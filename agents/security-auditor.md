@@ -109,4 +109,4 @@ Prioritize **exploitable vulnerabilities** over theoretical risks. A hardcoded A
 
 - **Invoke directly when:** the user wants a security-focused pass on a specific change, file, or component (Activity, Service, ContentProvider, network/data layer).
 - **Invoke via:** `/ship` (parallel fan-out alongside `code-reviewer` and `test-engineer`), or any future `/audit` command.
-- **Do not invoke from another persona.** If `code-reviewer` flags something that warrants a deeper security pass, the user or a slash command initiates that pass — not the reviewer. See [agents/README.md](README.md).
+- **Do not invoke from another persona.** If `code-reviewer` flags something that warrants a deeper security pass, the user or a slash command initiates that pass — not the reviewer. See [agent personas](../docs/agent-personas.md).
