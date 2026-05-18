@@ -81,7 +81,7 @@ Three reusable agent personas in `agents/`:
 Three composable layers, each with a distinct job:
 
 - **Skills** (`skills/<name>/SKILL.md`) — workflows with steps and exit criteria. The *how*. Mandatory steps when an intent matches.
-- **Personas** (`agents/<role>.md`) — roles with a perspective and an output format. The *who*. See [agents/README.md](agents/README.md) for the full catalogue and orchestration rules.
+- **Personas** (`agents/<role>.md`) — roles with a perspective and an output format. The *who*. See [docs/agent-personas.md](docs/agent-personas.md) for the full catalogue and orchestration rules.
 - **Slash Commands** — user-facing entry points (e.g. `/spec`, `/build`, `/ship`) that compose skills and personas.
 
 **Composition rule:** Junie is the orchestrator. Personas do not invoke other personas. A persona may invoke skills.

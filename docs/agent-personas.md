@@ -4,9 +4,9 @@ Specialist personas that play a single role with a single perspective on Android
 
 | Persona                                 | Role                     | Best for                                           |
 |-----------------------------------------|--------------------------|----------------------------------------------------|
-| [code-reviewer](code-reviewer.md)       | Senior Android Engineer  | Five-axis review before merge                      |
-| [security-auditor](security-auditor.md) | Mobile Security Engineer | OWASP Mobile Top 10, hardening review              |
-| [test-engineer](test-engineer.md)       | Android QA Engineer      | Test strategy, coverage analysis, Prove-It pattern |
+| [code-reviewer](../agents/code-reviewer.md)       | Senior Android Engineer  | Five-axis review before merge                      |
+| [security-auditor](../agents/security-auditor.md) | Mobile Security Engineer | OWASP Mobile Top 10, hardening review              |
+| [test-engineer](../agents/test-engineer.md)       | Android QA Engineer      | Test strategy, coverage analysis, Prove-It pattern |
 
 ## How personas relate to skills and commands
 
