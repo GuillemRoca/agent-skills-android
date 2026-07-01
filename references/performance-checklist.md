@@ -107,6 +107,7 @@ AsyncImage(
 ## APK / AAB Size
 
 - [ ] **R8 / ProGuard** enabled for release
+- [ ] **R8 full mode** evaluated (`android.enableR8.fullMode`, default since AGP 8) — stricter keep-rule semantics, smaller output; verify reflection/serialization paths
 - [ ] **Resource shrinking** enabled (`isShrinkResources = true`)
 - [ ] **WebP** format for images (smaller than PNG/JPEG)
 - [ ] **Vector drawables** for icons (instead of multiple PNG densities)
@@ -116,7 +117,15 @@ AsyncImage(
   - `res/` — identify large resources
   - `lib/` — native libraries per ABI
 - [ ] **ABI splits** or App Bundle for native libraries
+- [ ] **16 KB page-size support** for native libraries (required since Nov 2025 for apps targeting Android 15+; NDK r28+ / AGP 8.5.1+; pure Kotlin/Java apps already comply)
 - [ ] **Unused resources** removed (Lint `UnusedResources` check)
+
+## Compose Compiler
+
+- [ ] **Strong skipping** in effect (default in current Compose compiler) — unstable params compared by instance equality
+- [ ] **Stability config** (`stabilityConfigurationFile`) for classes from modules the compiler can't infer (e.g. `java.time.*`, external models)
+- [ ] **Compiler metrics/reports** reviewed for hot screens (`metricsDestination`/`reportsDestination`) — no unexpectedly unstable/restartable-only composables
+- [ ] **`@Immutable`/`@Stable`** annotations on UI model classes where inference fails
 
 ## Background Work
 

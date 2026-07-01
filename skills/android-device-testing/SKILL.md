@@ -223,7 +223,7 @@ emulator -avd Pixel_7_API_35 -no-window -no-audio -gpu swiftshader_indirect
    - minSdk (verify compatibility)
    - Target SDK (verify new behavior)
    - Latest stable (verify forward compatibility)
-   - Key breakpoints: API 26 (minSdk common), API 31 (S changes), API 33 (notification permission), API 34 (photo picker)
+   - Key breakpoints: API 26 (minSdk common), API 31 (S changes), API 33 (notification permission), API 34 (photo picker, foreground service types), API 35 (edge-to-edge enforced, 16 KB page sizes), API 36 (predictive back on by default), API 37 (adaptive-by-default: orientation/resizability restrictions ignored on ≥600dp displays; `ACCESS_LOCAL_NETWORK` permission)
 
 ### Step 6: `android` CLI for Deploy and Layout Assertions
 

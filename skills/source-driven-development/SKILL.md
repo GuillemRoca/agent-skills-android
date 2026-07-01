@@ -47,10 +47,10 @@ Every framework-specific decision must be backed by official documentation. Don'
 ```kotlin
 // Example: build.gradle.kts
 android {
-    compileSdk = 35
+    compileSdk = 37   // Android 17; requires AGP 9.1.1+
     defaultConfig {
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 37
     }
 }
 

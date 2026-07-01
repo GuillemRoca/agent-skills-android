@@ -33,6 +33,11 @@ description: >-
 5. **Red Flags** — observable violations during review
 6. **Verification** — checklist of tangible evidence (not "looks correct")
 
+> **Meta-skill exemption:** `using-agent-skills` is the one deliberate exception to
+> this anatomy. It documents *how agents operate across all skills* (operating
+> behaviors + skill routing), so it keeps only **Overview** and **Verification**.
+> Every other skill — including new ones — must carry all six sections.
+
 ### 3. Follow these rules
 
 **YAML Frontmatter:**
@@ -80,12 +85,20 @@ Keep supporting files minimal. Most skills need only SKILL.md.
 
 ## Testing Your Skill
 
-1. **YAML validation** — frontmatter has `name` and `description`
-2. **Description trigger** — does it clearly state when to use?
-3. **Code examples compile** — Kotlin syntax is correct
-4. **Verification checklist** — are items tangible and verifiable?
-5. **Anti-rationalizations** — do rebuttals address real shortcuts?
-6. **Under 500 lines** — focused, not encyclopedic
+Run the validator first — it enforces the structural rules automatically and runs in CI on every PR:
+
+```bash
+./scripts/validate-skills.sh
+```
+
+It checks: frontmatter (`name` matches the kebab-case directory, ≤64 chars; `description` starts with "Use when", ≤1024 chars), the six required sections (meta-skill exempt), the 500-line cap, and that `AGENTS.md`/`README.md` skill tables list exactly the skills on disk.
+
+Then review by hand:
+
+1. **Description trigger** — does it clearly state when to use?
+2. **Code examples compile** — Kotlin syntax is correct
+3. **Verification checklist** — are items tangible and verifiable?
+4. **Anti-rationalizations** — do rebuttals address real shortcuts?
 
 ## Style Guide
 

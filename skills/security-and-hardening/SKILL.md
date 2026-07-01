@@ -27,25 +27,25 @@ Security is a development constraint, not an afterthought. This skill provides a
 
 ### Always Do
 
-1. **Secure data storage:**
+1. **Secure data storage.** Jetpack Security Crypto (`EncryptedSharedPreferences`/`MasterKey`) is deprecated and unmaintained — do not add it to new code. Encrypt with a key held in the Android Keystore and persist the ciphertext (DataStore or a file):
 
 ```kotlin
-// Use EncryptedSharedPreferences for sensitive key-value data
-val masterKey = MasterKey.Builder(context)
-    .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-    .build()
-
-val securePrefs = EncryptedSharedPreferences.create(
-    context,
-    "secure_prefs",
-    masterKey,
-    EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-    EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
+// Key lives in the Android Keystore — never leaves secure hardware
+val keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore")
+keyGenerator.init(
+    KeyGenParameterSpec.Builder("auth_token_key", KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
+        .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+        .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+        .build()
 )
+val secretKey = keyGenerator.generateKey()
 
-// Store tokens securely
-securePrefs.edit().putString("auth_token", token).apply()
+// Encrypt, then persist iv + ciphertext (e.g. in Proto DataStore)
+val cipher = Cipher.getInstance("AES/GCM/NoPadding").apply { init(Cipher.ENCRYPT_MODE, secretKey) }
+val encrypted = cipher.iv + cipher.doFinal(token.toByteArray())
 ```
+
+Existing apps already on `EncryptedSharedPreferences` can keep it (the format is stable), but plan a migration and never store new categories of secrets with it.
 
 2. **Network Security Config:**
 
@@ -75,6 +75,11 @@ securePrefs.edit().putString("auth_token", token).apply()
 <!-- AndroidManifest.xml -->
 <application android:networkSecurityConfig="@xml/network_security_config">
 ```
+
+Targeting API 37 (Android 17) also changes the network/auth surface: LAN access requires
+the `ACCESS_LOCAL_NETWORK` permission, standard SMS OTPs are delayed 3 hours (use the SMS
+Retriever API or SMS User Consent instead of reading raw SMS), and Encrypted Client Hello +
+Certificate Transparency are on by default for TLS — verify pinning still works.
 
 3. **Input validation:**
 

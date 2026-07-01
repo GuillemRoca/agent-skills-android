@@ -1,5 +1,10 @@
 # Testing Patterns — Android Reference
 
+## Toolchain Notes
+
+- **JUnit5 on Android needs a plugin.** JUnit5 works out of the box only for plain JVM modules. Android modules (and instrumented tests) require the third-party `de.mannodermaus.android-junit5` Gradle plugin — add it before writing JUnit5 tests, or fall back to JUnit4 + `AndroidJUnit4` for instrumented tests.
+- **MockWebServer has two APIs.** The examples below use the classic `okhttp3:mockwebserver` API. New projects on OkHttp 5 should prefer `mockwebserver3` (immutable `MockResponse.Builder`, `mockServer.enqueue(MockResponse.Builder().body(...).build())`); the concepts are identical.
+
 ## Core Concepts
 
 ### Arrange-Act-Assert (AAA)
@@ -264,6 +269,44 @@ class TaskApiTest {
     }
 }
 ```
+
+### Flow Testing with Turbine
+
+```kotlin
+// Turbine (app.cash.turbine:turbine) makes multi-emission Flow tests readable.
+// Prefer it over collecting into lists or chaining .first() calls.
+@Test
+fun `uiState moves Loading to Success when tasks load`() = runTest {
+    every { repository.getTasks() } returns flowOf(listOf(task))
+    val viewModel = TaskListViewModel(GetTasksUseCase(repository))
+
+    viewModel.uiState.test {
+        assertEquals(TaskListUiState.Loading, awaitItem())
+        assertIs<TaskListUiState.Success>(awaitItem())
+        cancelAndIgnoreRemainingEvents()
+    }
+}
+```
+
+Rules of thumb: one `test { }` block per Flow; always end with an explicit `awaitComplete()`, `cancelAndIgnoreRemainingEvents()`, or consumed-everything state — Turbine fails the test on unconsumed events, which catches unexpected emissions.
+
+### Screenshot Tests
+
+Two supported approaches — both run on the JVM (no device):
+
+- **Compose Preview Screenshot Testing** (official, `com.android.compose.screenshot` plugin): turns existing `@Preview` composables into screenshot tests. `./gradlew updateDebugScreenshotTest` records goldens; `./gradlew validateDebugScreenshotTest` fails CI on diffs.
+- **Roborazzi** (Robolectric-based): `captureRoboImage()` inside any Robolectric/Compose test; more control (interactions before capture, non-Preview cases).
+
+```kotlin
+// Roborazzi example
+@Test
+fun taskCard_default() {
+    composeTestRule.setContent { AppTheme { TaskCard(task) } }
+    composeTestRule.onRoot().captureRoboImage()
+}
+```
+
+Golden images are committed; a failing diff is a review artifact, not a flaky annoyance — keep goldens deterministic (fixed locale, font scale, and date/time inputs).
 
 ## MockK Quick Reference
 

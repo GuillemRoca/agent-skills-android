@@ -84,7 +84,7 @@ Three composable layers, each with a distinct job:
 - **Personas** (`agents/<role>.md`) — roles with a perspective and an output format. The *who*. See [docs/agent-personas.md](docs/agent-personas.md) for the full catalogue and orchestration rules.
 - **Slash Commands** — user-facing entry points (e.g. `/spec`, `/build`, `/ship`) that compose skills and personas.
 
-**Composition rule:** Junie is the orchestrator. Personas do not invoke other personas. A persona may invoke skills.
+**Composition rule:** The user — or a slash command acting on their behalf — is the orchestrator. Personas do not invoke other personas. A persona may invoke skills.
 
 The endorsed multi-persona pattern is **parallel fan-out with a merge step** — used during shipping to run `code-reviewer`, `security-auditor`, and `test-engineer` concurrently on the same diff and synthesize their reports into a single go/no-go decision.
 
