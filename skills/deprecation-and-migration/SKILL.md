@@ -160,13 +160,21 @@ class LegacyFragment : Fragment() {
 ## Kotlin X.Y → X.Z Migration
 
 - [ ] Update `kotlin` version in `libs.versions.toml`
-- [ ] Update Compose compiler compatibility mapping
-- [ ] Run `./gradlew build` — fix compile errors
+- [ ] Update `org.jetbrains.kotlin.plugin.compose` to the same version — since
+      Kotlin 2.0 the Compose compiler ships as a Kotlin Gradle plugin versioned
+      with Kotlin itself (the old Compose-compiler compatibility map is obsolete)
+- [ ] Run `./gradlew build` — fix compile errors (K2 is the default compiler;
+      check the K2 migration notes for stricter diagnostics)
 - [ ] Check for deprecated API usage in new version
 - [ ] Run `./gradlew test` — verify tests pass
 - [ ] Review Kotlin migration guide for breaking changes
 - [ ] Update `.editorconfig` or ktlint config if needed
 ```
+
+To resolve the current compatible AGP/Kotlin/Compose versions authoritatively, use
+`android studio version-lookup agp kotlin compose` when the `android` CLI and a
+running Android Studio are available (see `references/android-cli-reference.md`),
+instead of guessing from memory.
 
 ### Step 6: Cleanup
 

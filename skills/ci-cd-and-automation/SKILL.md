@@ -103,7 +103,7 @@ jobs:
       - name: Run instrumented tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 34
+          api-level: 36   # Play target floor; add API 37 to the matrix for latest-behavior testing
           arch: x86_64
           script: ./gradlew connectedAndroidTest
 
@@ -170,7 +170,7 @@ org.gradle.jvmargs=-Xmx4g -XX:+UseParallelGC
 - name: Run instrumented tests
   uses: reactivecircus/android-emulator-runner@v2
   with:
-    api-level: 34
+    api-level: 36
     arch: x86_64
     target: google_apis
     profile: pixel_6
@@ -178,6 +178,8 @@ org.gradle.jvmargs=-Xmx4g -XX:+UseParallelGC
     disable-animations: true
     script: ./gradlew connectedAndroidTest
 ```
+
+If the repo has committed Maestro flows (`.maestro/`), run them in the same emulator job after installing the debug build — `./gradlew installDebug && maestro test .maestro/` — so every shipped acceptance criterion is regression-checked per PR (see `android-e2e-verification`).
 
 When the `android` CLI is present in the runner image, `android sdk install` is a leaner alternative to `setup-android` for declarative platform/build-tools provisioning:
 

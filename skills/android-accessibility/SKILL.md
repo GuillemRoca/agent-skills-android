@@ -284,6 +284,8 @@ Row {
 
     Use `android layout --diff` after an interaction to inspect only what changed — keeps assertions tight when verifying live regions, error toasts, or focus shifts. When `layout` returns nothing useful (WebView, animation), fall back to `android screen capture --annotate -o screen.png` and visually verify focus order. See `references/android-cli-reference.md`.
 
+    **No device needed for composables:** `android studio render-compose-preview --print-semantics <file> <composable>` emits the accessibility semantics tree of a `@Preview` as JSON — assert on `contentDescription`, `role`, and heading semantics straight from the preview, before anything is installed (requires a running Android Studio with Gemini; see `references/android-cli-reference.md`).
+
 12. **Compose UI tests for accessibility:**
 
 ```kotlin

@@ -54,6 +54,7 @@ Once all three reports are back, the main agent (not a sub-persona) synthesizes 
   ./gradlew lint                 # Lint
   ./gradlew spotlessCheck        # Formatting
   ./gradlew detekt               # Static analysis
+  maestro test .maestro/         # E2E acceptance flows (if present; see android-e2e-verification)
   ```
 - Check for stragglers: no `TODO`/`FIXME` without issue links, no `Log.d()`/`Log.v()` in production code, no hardcoded strings in UI, feature flags for incomplete features OFF.
 

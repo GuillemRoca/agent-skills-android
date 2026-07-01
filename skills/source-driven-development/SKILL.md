@@ -47,10 +47,10 @@ Every framework-specific decision must be backed by official documentation. Don'
 ```kotlin
 // Example: build.gradle.kts
 android {
-    compileSdk = 35
+    compileSdk = 37   // Android 17; requires AGP 9.1.1+
     defaultConfig {
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 37
     }
 }
 
@@ -74,10 +74,19 @@ dependencies {
 
 3. **Check version-specific docs** — APIs change between versions:
    - Room 2.7 has different migration APIs than Room 2.5
-   - Compose BOM 2025.01 has different APIs than 2024.01
-   - Navigation Compose 2.8+ uses type-safe routes
+   - Compose BOM releases change APIs — check the BOM mapping for your date
+   - Navigation 3 (back-stack-as-state) is a different API surface from Navigation 2.x type-safe routes
 
-4. **When available, use `android docs` for cite-able URIs:**
+4. **Never guess versions — resolve them.** When the `android` CLI and a running Android Studio are available:
+
+```bash
+android studio version-lookup agp kotlin compose        # toolchain keywords
+android studio version-lookup androidx.room:room-runtime  # Maven coordinates
+```
+
+The output is authoritative and current — accepted at priority 1 in the source hierarchy, same as `kb://` URIs. Fallback: the official release-notes pages (`developer.android.com/build/releases/gradle-plugin`, AndroidX release pages).
+
+5. **When available, use `android docs` for cite-able URIs:**
 
 ```bash
 android docs search "compose recomposition"
@@ -88,7 +97,7 @@ The returned `kb://` URI is a stable citation — prefer it over a plain `develo
 
 ### Step 3: Implement Matching Documented Patterns
 
-4. **Match the official example pattern**, not your memory:
+6. **Match the official example pattern**, not your memory:
 
 ```kotlin
 // Official Room pattern (verify against docs for your version)
@@ -109,13 +118,13 @@ interface UserDao {
 }
 ```
 
-5. **Surface conflicts** with existing code:
+7. **Surface conflicts** with existing code:
    - "The docs recommend `@Upsert` but the project uses `@Insert(onConflict = REPLACE)` — which should I follow?"
    - "Navigation Compose 2.8+ uses type-safe routes but the project is on 2.7 — should I upgrade or use string routes?"
 
 ### Step 4: Cite Sources
 
-6. **Include source references** in code comments for non-obvious patterns:
+8. **Include source references** in code comments for non-obvious patterns:
 
 ```kotlin
 // Using rememberLauncherForActivityResult per:
@@ -127,7 +136,7 @@ val permissionLauncher = rememberLauncherForActivityResult(
 }
 ```
 
-7. **In PRs, link to documentation** that justifies the approach.
+9. **In PRs, link to documentation** that justifies the approach.
 
 ## Common Rationalizations
 

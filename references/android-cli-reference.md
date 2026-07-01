@@ -1,6 +1,6 @@
 # Android CLI — Reference
 
-Minimal reference for the two `android` CLI capabilities this repo actually prescribes. Everything else is convenience over existing `adb`/`gradlew` workflows and is not prescribed here — see the upstream docs at https://developer.android.com/tools/agents/android-cli.
+Minimal reference for the `android` CLI capabilities this repo actually prescribes (CLI v1.0 stable, May 2026). Everything else is convenience over existing `adb`/`gradlew` workflows and is not prescribed here — see the upstream docs at https://developer.android.com/tools/agents/android-cli.
 
 ## Install & Probe
 
@@ -61,9 +61,44 @@ val state = remember { mutableStateOf(0) }
 
 `kb://` URIs are accepted at priority 1 in the `source-driven-development` source authority hierarchy, alongside `developer.android.com/...` URLs.
 
+## `android screen` — Annotated Screenshots and Coordinate Resolution
+
+The see-and-drive loop for agents without a vision-precise tap model: capture with labeled bounding boxes, then translate a label into tap coordinates.
+
+```bash
+android screen capture --annotate -o screen.png   # labeled boxes (#1, #2, …) on UI elements
+android screen resolve --screenshot=screen.png --string="input tap #5"
+# → outputs e.g. "input tap 500 1000" — feed to `adb shell input`
+```
+
+Prefer `android layout` (structured JSON) for assertions; use `screen capture/resolve` when you need to *act* on an element you identified visually.
+
+## `android studio` — Semantic IDE Bridge
+
+Requires Android Studio Quail 2 Canary 1+ running with Gemini enabled and signed in. Probe with `android studio check` (lists running Studio instances); if it fails, fall back to the non-Studio paths below — like the rest of the CLI, never a hard requirement.
+
+```bash
+android studio version-lookup agp kotlin compose   # authoritative current versions
+android studio version-lookup androidx.room:room-runtime
+android studio render-compose-preview --output-image-file=preview.png <file> <composable>
+android studio render-compose-preview --print-semantics <file> <composable>   # a11y semantics JSON
+android studio analyze-file <path>        # lint/error analysis of a Kotlin/Java file
+android studio find-declaration <symbol>
+android studio find-usages <symbol>
+```
+
+Prescribed uses:
+
+- **`version-lookup`** — resolves current AGP/Kotlin/Compose/library versions from the authoritative source. `source-driven-development` accepts its output at priority 1; never guess versions from memory. Fallback: check the official release-notes pages.
+- **`render-compose-preview`** — renders any `@Preview` to a PNG without a device, so an agent can *look at* the UI it just wrote (`android-ui-engineering`), and `--print-semantics` emits the accessibility semantics tree for assertions (`android-accessibility`). Fallback: screenshot tests or an emulator + `android screen capture`.
+
+## Journeys — Natural-Language UI Tests
+
+Journeys are AI-driven UI tests written as natural-language steps; the agent uses vision + reasoning to navigate the app and evaluate assertions against on-screen state. Runnable from terminal/CI via the CLI. Use for exploratory end-to-end coverage where maintaining selectors is not worth it; keep deterministic flows in Compose/Espresso tests or Maestro (see `android-e2e-verification`). Docs: https://developer.android.com/tools/agents/android-cli/journeys.
+
 ## `android skills` — Discover Catalog Skills
 
-Browse and install skills from the official Android skills catalog at https://github.com/android/skills. `android init` plants the `android-cli` skill into every detected agent harness (`~/.claude/skills/`, `~/.gemini/skills/`, `~/.codex/skills/`, `~/.copilot/skills/`, `~/.junie/skills/`, `~/.config/opencode/skills/`); `android skills` is how you discover and add the rest.
+Browse and install skills from the official Android skills catalog at https://github.com/android/skills. `android init` plants the `android-cli` skill into every detected agent harness (`~/.claude/skills/`, `~/.gemini/skills/`, `~/.codex/skills/`, `~/.copilot/skills/`, `~/.config/opencode/skills/`); `android skills` is how you discover and add the rest.
 
 ```bash
 android skills list                   # installed skills
@@ -83,7 +118,7 @@ Then register in `AGENTS.md` (skill directory tree) and `README.md` (phase table
 
 ## Other CLI Commands (not prescribed)
 
-The CLI also provides `run`, `emulator`, `sdk`, `create`, `describe`, and `screen` subcommands. This repo does not prescribe them as standalone — instead, the relevant skills (`android-device-testing`, `debugging-and-error-recovery`, `ci-cd-and-automation`) reference them where they earn their keep alongside existing `adb`/`gradlew`/`sdkmanager`/`avdmanager`/`emulator`/`reactivecircus/android-emulator-runner` workflows.
+The CLI also provides `run`, `emulator`, `sdk`, `create`, and `describe` subcommands. This repo does not prescribe them as standalone — instead, the relevant skills (`android-device-testing`, `debugging-and-error-recovery`, `ci-cd-and-automation`) reference them where they earn their keep alongside existing `adb`/`gradlew`/`sdkmanager`/`avdmanager`/`emulator`/`reactivecircus/android-emulator-runner` workflows.
 
 See https://developer.android.com/tools/agents/android-cli for the full surface.
 

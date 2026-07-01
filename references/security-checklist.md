@@ -2,7 +2,7 @@
 
 ## Data Storage
 
-- [ ] **Sensitive data** stored with `EncryptedSharedPreferences` or Android Keystore
+- [ ] **Sensitive data** encrypted with Android Keystore-held keys (ciphertext in DataStore or files). Jetpack Security Crypto (`EncryptedSharedPreferences`/`MasterKey`) is deprecated and unmaintained — existing usage may remain with a migration plan; no new usage
 - [ ] **No plain-text passwords** — use secure hashing or token-based auth
 - [ ] **No `MODE_WORLD_READABLE`** or `MODE_WORLD_WRITEABLE`
 - [ ] **Room database** not in external storage (default internal is correct)
@@ -26,6 +26,8 @@
 - [ ] **Backup pins** configured (in case primary pin rotates)
 - [ ] **Pin expiration** set with rotation plan
 - [ ] **No disabled certificate verification** (no custom `TrustManager` that accepts all certs)
+- [ ] **API 37 network changes handled** — `ACCESS_LOCAL_NETWORK` permission declared if the app reaches LAN devices; cert pinning verified against default-on Encrypted Client Hello + Certificate Transparency
+- [ ] **OTP via SMS Retriever / SMS User Consent** (standard SMS OTPs are delayed 3 hours on API 37)
 
 ## Authentication & Authorization
 
@@ -43,7 +45,7 @@ val biometricPrompt = BiometricPrompt(activity, executor,
 biometricPrompt.authenticate(promptInfo)
 ```
 
-- [ ] **Session tokens** refreshed regularly, stored in EncryptedSharedPreferences
+- [ ] **Session tokens** refreshed regularly, stored encrypted with a Keystore-held key
 - [ ] **Token expiration** handled gracefully (redirect to login)
 
 ## Input Validation

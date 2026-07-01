@@ -184,7 +184,9 @@ Expanded (25%) → Full (100%) → Removed (cleanup)
 ### Step 6: Play Store Requirements
 
 16. **Play Store checklist:**
-    - [ ] Target SDK meets Play Store requirements (usually latest stable - 1)
+    - [ ] Target SDK meets Play Store requirements (the latest stable API level — new apps and updates must target API 36+ from Aug 31, 2026; check the current deadline at developer.android.com/google/play/requirements/target-sdk)
+    - [ ] 16 KB page-size compliance verified if the app ships native libraries (required since Nov 2025 for apps targeting Android 15+; needs NDK r28+ / AGP 8.5.1+)
+    - [ ] Edge-to-edge rendering verified (enforced for apps targeting Android 15+; no `statusBarColor`/`navigationBarColor` reliance)
     - [ ] Privacy policy URL set
     - [ ] Data safety form completed
     - [ ] Content rating questionnaire completed

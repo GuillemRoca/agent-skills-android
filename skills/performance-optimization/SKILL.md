@@ -200,11 +200,12 @@ android {
 8. **Image loading optimization:**
 
 ```kotlin
-// Coil with size constraints
+// Coil with size constraints — request only the pixels you render.
+// Size.ORIGINAL decodes the full bitmap and defeats the point.
 AsyncImage(
     model = ImageRequest.Builder(LocalContext.current)
         .data(task.imageUrl)
-        .size(Size.ORIGINAL)  // Or specific: .size(200, 200)
+        .size(200, 200)  // match the display size; never Size.ORIGINAL for thumbnails
         .crossfade(true)
         .build(),
     contentDescription = task.title,

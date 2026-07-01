@@ -223,7 +223,7 @@ emulator -avd Pixel_7_API_35 -no-window -no-audio -gpu swiftshader_indirect
    - minSdk (verify compatibility)
    - Target SDK (verify new behavior)
    - Latest stable (verify forward compatibility)
-   - Key breakpoints: API 26 (minSdk common), API 31 (S changes), API 33 (notification permission), API 34 (photo picker)
+   - Key breakpoints: API 26 (minSdk common), API 31 (S changes), API 33 (notification permission), API 34 (photo picker, foreground service types), API 35 (edge-to-edge enforced, 16 KB page sizes), API 36 (predictive back on by default), API 37 (adaptive-by-default: orientation/resizability restrictions ignored on ≥600dp displays; `ACCESS_LOCAL_NETWORK` permission)
 
 ### Step 6: `android` CLI for Deploy and Layout Assertions
 
@@ -250,18 +250,39 @@ emulator -avd Pixel_7_API_35 -no-window -no-audio -gpu swiftshader_indirect
 
     Useful during test authoring: lets you discover the exact `resource-id`, `text`, and `bounds` of the elements your test should assert on, without guessing from a screenshot. See `references/android-cli-reference.md`.
 
-### Step 7: Layout Inspector
+### Step 7: Screenshot Tests
 
-12. **Use Layout Inspector to debug:**
+12. **Lock UI in with JVM screenshot tests** — no device, fast enough to run on every PR:
+
+    - **Compose Preview Screenshot Testing** (official `com.android.compose.screenshot` plugin): reuses your `@Preview` composables. Record goldens with `./gradlew updateDebugScreenshotTest`, fail CI on diffs with `./gradlew validateDebugScreenshotTest`.
+    - **Roborazzi** (Robolectric-based): `captureRoboImage()` inside any Compose/Robolectric test — use when you need interactions before capture or non-Preview cases.
+
+    Use Preview Screenshot Testing by default (zero extra test code); reach for Roborazzi when a state can't be expressed as a preview. Keep goldens deterministic (fixed locale, font scale, time inputs) and commit them — a diff is a review artifact. Patterns in `references/testing-patterns.md`.
+
+### Step 8: Journeys and Black-Box E2E
+
+13. **Choose the right end-to-end layer:**
+
+    | Tool | Nature | Use for |
+    |------|--------|---------|
+    | Compose/Espresso tests | White-box, in-process | Screen and flow logic within the app; fastest feedback |
+    | **Maestro** (see `android-e2e-verification`) | Black-box YAML over adb | Deterministic acceptance flows per feature slice; release builds; CI |
+    | **Journeys** (`android` CLI / Android Studio) | AI vision + reasoning from natural-language steps | Exploratory E2E where maintaining selectors isn't worth it; resilient to layout churn but slower and less deterministic |
+
+    When driving the device ad hoc (reproducing a bug, verifying a fix), use the CLI's see-and-drive loop: `android screen capture --annotate` labels every element with `#n`, then `android screen resolve --screenshot=... --string="input tap #5"` translates the label into `adb shell input` coordinates. See `references/android-cli-reference.md`.
+
+### Step 9: Layout Inspector
+
+14. **Use Layout Inspector to debug:**
     - Open via Android Studio → Tools → Layout Inspector
     - Inspect Compose hierarchy and recomposition counts
     - Verify accessibility properties (content descriptions, roles)
     - Check padding, margins, and alignment
     - Compare with design specs
 
-### Step 8: Test Organization
+### Step 10: Test Organization
 
-13. **Test pyramid on Android:**
+15. **Test pyramid on Android:**
 
 ```
     /‾‾‾‾‾‾‾‾‾\
@@ -302,4 +323,5 @@ emulator -avd Pixel_7_API_35 -no-window -no-audio -gpu swiftshader_indirect
 - [ ] Compose tests use semantic selectors (text, content description)
 - [ ] Test matrix covers minSdk and targetSdk
 - [ ] CI runs instrumented tests on emulator
+- [ ] Screenshot tests exist for key screens and pass (`./gradlew validateDebugScreenshotTest` or Roborazzi)
 - [ ] Layout Inspector shows expected hierarchy and accessibility info
