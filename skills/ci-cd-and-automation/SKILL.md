@@ -179,6 +179,8 @@ org.gradle.jvmargs=-Xmx4g -XX:+UseParallelGC
     script: ./gradlew connectedAndroidTest
 ```
 
+If the repo has committed Maestro flows (`.maestro/`), run them in the same emulator job after installing the debug build — `./gradlew installDebug && maestro test .maestro/` — so every shipped acceptance criterion is regression-checked per PR (see `android-e2e-verification`).
+
 When the `android` CLI is present in the runner image, `android sdk install` is a leaner alternative to `setup-android` for declarative platform/build-tools provisioning:
 
 ```yaml

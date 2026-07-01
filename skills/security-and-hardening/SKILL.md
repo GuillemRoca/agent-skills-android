@@ -23,7 +23,7 @@ Security is a development constraint, not an afterthought. This skill provides a
 
 **Skip when:** Changes are purely cosmetic with no data or network impact.
 
-## Three-Tier Framework
+## Core Process: Three-Tier Framework
 
 ### Always Do
 

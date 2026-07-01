@@ -2,7 +2,7 @@
 
 **Production-grade Android engineering skills for AI coding agents.**
 
-24 specialized workflows covering the full development lifecycle from spec to Play Store — built for Kotlin, Jetpack Compose, Gradle, and the Android ecosystem.
+29 specialized workflows covering the full development lifecycle from spec to Play Store — built for Kotlin, Jetpack Compose, Gradle, and the Android ecosystem.
 
 ## What Are Skills?
 
@@ -36,11 +36,12 @@ Seven slash commands provide quick access:
 | REVIEW | `/review` | Five-axis code review |
 | SHIP | `/ship` | Pre-launch checklist and rollout |
 
-## All 24 Skills
+## All 29 Skills
 
 ### DEFINE Phase
 | Skill | Description |
 |-------|-------------|
+| `interview-me` | Iterative questioning that turns vague requests into ~95%-confident requirements |
 | `idea-refine` | Sharpen vague ideas into focused, actionable directions |
 | `spec-driven-development` | Write structured specs before coding |
 | `context-engineering` | Set up project context for AI-assisted development |
@@ -58,15 +59,18 @@ Seven slash commands provide quick access:
 | `test-driven-development` | Red-Green-Refactor with JUnit5 + MockK |
 | `android-ui-engineering` | Jetpack Compose, Material 3, Navigation, state hoisting |
 | `android-data-persistence` | Room, DataStore, offline-first, Paging3, repository pattern |
+| `android-background-work` | WorkManager, foreground service types, exact alarms, Doze |
 | `api-and-interface-design` | Retrofit interfaces, sealed types, contract-first design |
 | `source-driven-development` | Every framework decision backed by official docs |
+| `doubt-driven-development` | Adversarial self-review for hard-to-reverse decisions |
 | `code-simplification` | Simplify code without changing behavior |
 | `documentation-and-adrs` | Architecture Decision Records and documentation |
 
 ### VERIFY Phase
 | Skill | Description |
 |-------|-------------|
-| `android-device-testing` | Espresso, UI Automator, Compose tests, ADB, emulators |
+| `android-device-testing` | Espresso, UI Automator, Compose tests, screenshots, ADB, emulators |
+| `android-e2e-verification` | Maestro flows: acceptance criteria as executable end-to-end checks |
 | `android-accessibility` | TalkBack, content descriptions, touch targets, semantics |
 | `debugging-and-error-recovery` | Systematic debugging with Logcat, profilers, LeakCanary |
 | `performance-optimization` | Android Vitals, Macrobenchmark, APK size, recomposition |
@@ -83,6 +87,7 @@ Seven slash commands provide quick access:
 | `ci-cd-and-automation` | GitHub Actions, Gradle caching, emulator testing in CI |
 | `git-workflow-and-versioning` | Trunk-based dev, atomic commits, versionCode/versionName |
 | `shipping-and-launch` | Pre-launch checklist, staged rollout, Play Store requirements |
+| `observability-and-instrumentation` | Crashlytics, Play Vitals, structured logging, release health |
 | `deprecation-and-migration` | minSdk bumps, library migrations, strangler pattern |
 
 ### META

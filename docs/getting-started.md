@@ -130,7 +130,7 @@ SHIP: ci-cd-and-automation → git-workflow-and-versioning → shipping-and-laun
 
 ## Tips
 
-1. **Load skills contextually** — don't load all 24 at once. Load the one for your current task.
+1. **Load skills contextually** — don't load all 29 at once. Load the one for your current task.
 2. **Follow the process** — skills are workflows, not suggestions. Follow steps in order.
 3. **Don't skip verification** — every skill ends with a checklist. Complete it.
 4. **Check rationalizations** — before skipping a step, check the "Common Rationalizations" table.

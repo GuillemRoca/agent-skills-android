@@ -132,8 +132,8 @@ fun `completed tasks should not appear in active filter`() {
 
 ```
     /‾‾‾‾‾‾‾‾‾\
-   / UI Tests   \        ~5%  — Compose rules, Espresso
-  / (device)     \             see: android-device-testing
+   / UI Tests   \        ~5%  — Compose rules, Espresso, Maestro flows
+  / (device)     \             see: android-device-testing, android-e2e-verification
  /‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾\
 / Integration Tests \     ~15% — Room in-memory DB, MockWebServer,
 | (local/device)    |           Robolectric

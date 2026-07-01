@@ -1,7 +1,7 @@
 {
   "name": "agent-skills-android",
   "description": "Production-grade Android engineering skills for AI coding agents. Covers the full development lifecycle from spec to Play Store: Kotlin, Jetpack Compose, Gradle, Android SDK, and the Android ecosystem.",
-  "version": "1.5.2",
+  "version": "1.6.0",
   "author": {
     "name": "Guillem Roca"
   },

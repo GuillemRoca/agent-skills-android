@@ -7,6 +7,7 @@ Write tests before implementation using Red-Green-Refactor.
 Load and follow these skills:
 - `test-driven-development` from `skills/test-driven-development/SKILL.md`
 - `android-device-testing` from `skills/android-device-testing/SKILL.md` (for instrumented tests)
+- `android-e2e-verification` from `skills/android-e2e-verification/SKILL.md` (for end-to-end acceptance flows)
 
 ### New Feature Testing
 
@@ -33,6 +34,8 @@ Load and follow these skills:
 | Compose UI tests | Compose test rules | `./gradlew connectedAndroidTest` |
 | Espresso tests | Espresso | `./gradlew connectedAndroidTest` |
 | Room DAO tests | In-memory Room | `./gradlew connectedAndroidTest` |
+| Screenshot tests | Preview Screenshot Testing / Roborazzi | `./gradlew validateDebugScreenshotTest` |
+| E2E acceptance flows | Maestro | `maestro test .maestro/` |
 
 ### Rules
 

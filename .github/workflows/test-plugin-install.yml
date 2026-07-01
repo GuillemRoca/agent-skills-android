@@ -17,3 +17,12 @@ jobs:
 
       - name: Validate plugin manifest
         run: claude plugin validate .
+
+  validate-skills:
+    name: Validate skills
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Validate skill structure and doc consistency
+        run: ./scripts/validate-skills.sh
