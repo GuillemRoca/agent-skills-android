@@ -3,7 +3,8 @@ name: android-ui-engineering
 description: >-
   Use when building UI with Jetpack Compose. Covers component design,
   state hoisting, recomposition optimization, Material 3 theming,
-  Navigation Compose, previews, and XML interop.
+  Navigation 3, adaptive layouts for large screens, previews,
+  screenshot verification, and XML interop.
 ---
 
 # Android UI Engineering
@@ -19,6 +20,7 @@ Build production-quality Android UI with Jetpack Compose. This skill covers comp
 - Debugging recomposition or performance issues in Compose
 - Implementing Material 3 design system
 - Setting up navigation between screens
+- Adapting layouts for tablets, foldables, and desktop windows
 
 **Skip when:** Modifying non-UI code (repositories, use cases, data layer).
 
@@ -162,47 +164,77 @@ Text(
 )
 ```
 
-### Step 4: Navigation
+### Step 4: Navigation (Navigation 3)
 
-7. **Navigation Compose setup:**
+Use **Navigation 3** (`androidx.navigation3:navigation3-runtime` + `navigation3-ui`, stable) for new Compose apps. The back stack is state you own — no opaque `NavController`.
+
+7. **Navigation 3 setup:**
 
 ```kotlin
+// Routes are serializable Kotlin types — compile-time safe, no route strings
+@Serializable data object TaskList : NavKey
+@Serializable data class TaskDetail(val taskId: String) : NavKey
+
 @Composable
-fun AppNavigation(
-    navController: NavHostController = rememberNavController(),
-) {
-    NavHost(
-        navController = navController,
-        startDestination = "task_list",
-    ) {
-        composable("task_list") {
-            TaskListScreen(
-                onNavigateToDetail = { taskId ->
-                    navController.navigate("task_detail/$taskId")
-                }
-            )
-        }
-        composable(
-            route = "task_detail/{taskId}",
-            arguments = listOf(navArgument("taskId") { type = NavType.StringType }),
-        ) {
-            TaskDetailScreen(
-                onNavigateBack = { navController.popBackStack() }
-            )
-        }
-    }
+fun AppNavigation(modifier: Modifier = Modifier) {
+    val backStack = rememberNavBackStack(TaskList)
+
+    NavDisplay(
+        backStack = backStack,
+        onBack = { backStack.removeLastOrNull() },
+        entryProvider = entryProvider {
+            entry<TaskList> {
+                TaskListScreen(
+                    onNavigateToDetail = { taskId -> backStack.add(TaskDetail(taskId)) },
+                )
+            }
+            entry<TaskDetail> { key ->
+                TaskDetailScreen(
+                    taskId = key.taskId,
+                    onNavigateBack = { backStack.removeLastOrNull() },
+                )
+            }
+        },
+        modifier = modifier,
+    )
 }
 ```
 
 8. **Navigation rules:**
-   - NavController lives in the navigation host, not in screens
-   - Screens receive navigation callbacks (`onNavigateToDetail`), not the NavController
-   - Arguments are typed via `navArgument`
-   - Deep links declared in the navigation graph
+   - The back stack (`rememberNavBackStack`) lives in the navigation host; navigate by mutating it (`add`, `removeLastOrNull`) — it is a `SnapshotStateList`, so `NavDisplay` reacts automatically
+   - Screens receive navigation callbacks (`onNavigateToDetail`), never the back stack itself
+   - Routes are `@Serializable` types, not strings — arguments are constructor parameters
+   - Multi-pane layouts use Nav3 **Scenes** via `androidx.compose.material3.adaptive:adaptive-navigation3` (see Step 5) — two destinations can be visible at once, no dual-NavHost workarounds
+   - Existing apps on Navigation 2: stay on type-safe routes (`@Serializable` destinations, Nav 2.8+) and migrate with the official Nav2→Nav3 guide (`developer.android.com/guide/navigation/navigation-3/migration-guide`) — see `deprecation-and-migration`
+   - **Deep links:** verify HTTPS App Links with `assetlinks.json` + `android:autoVerify="true"`; validate every parameter of an inbound link before acting on it (see `security-and-hardening`)
 
-### Step 5: Recomposition Optimization
+### Step 5: Adaptive Layouts
 
-9. **Avoid unnecessary recompositions:**
+9. **Drive layout off window size classes — never orientation or device type.** Targeting API 37, this stops being optional: `screenOrientation`/`resizeableActivity` restrictions are ignored on displays ≥600dp, with no opt-out. Portrait-only apps get letterboxed into windows they never designed for.
+
+```kotlin
+// WindowSizeClass with the V2 breakpoints (adds Large ≥1200dp, Extra-large)
+val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
+val useTwoPane = windowSizeClass.isWidthAtLeastBreakpoint(
+    WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND  // 840dp
+)
+
+// Material 3 adaptive scaffolds do the switching for you:
+// - NavigationSuiteScaffold: bottom bar <-> nav rail by window size
+// - NavigableListDetailPaneScaffold: list+detail side by side on Expanded+
+// (androidx.compose.material3.adaptive:adaptive-layout / adaptive-navigation;
+//  pass supportLargeAndXLargeWidth = true to surface the Large/XL classes)
+```
+
+10. **Adaptive rules:**
+    - Compact (<600dp) and Medium: single pane; Expanded (≥840dp) and up: multi-pane via `ListDetailPaneScaffold`/`SupportingPaneScaffold`
+    - Edge-to-edge is the default (enforced targeting Android 15+): call `enableEdgeToEdge()`, consume `WindowInsets` in scaffolds, never rely on `statusBarColor`
+    - Predictive back: use `PredictiveBackHandler`/`OnBackPressedDispatcher` — never override `onBackPressed()` (default-on targeting 36+)
+    - State survives size changes: `ViewModel` + `rememberSaveable`, not `configChanges` hacks
+
+### Step 6: Recomposition Optimization
+
+11. **Avoid unnecessary recompositions:**
 
 ```kotlin
 // Use stable types for state (data classes, immutable collections)
@@ -230,14 +262,14 @@ LazyColumn {
 }
 ```
 
-10. **Recomposition debugging:**
+12. **Recomposition debugging:**
     - Enable recomposition counts in Layout Inspector
     - Use `@Stable` annotation for classes that Compose should treat as stable
     - Use `ImmutableList` from `kotlinx.collections.immutable` for list parameters
 
-### Step 6: Previews
+### Step 7: Previews — and Verify Them
 
-11. **Write previews for every screen and component:**
+13. **Write previews for every screen and component:**
 
 ```kotlin
 @Preview(showBackground = true)
@@ -271,9 +303,14 @@ private fun TaskListScreenPreview() {
 }
 ```
 
-### Step 7: XML Interop (Legacy)
+14. **Previews are verifiable — look at what you built:**
 
-12. **Compose in XML:**
+    - **Agent-side rendering:** `android studio render-compose-preview --output-image-file=preview.png <file> <composable>` renders a `@Preview` to PNG without a device, so you can inspect the UI you just wrote instead of assuming it looks right (requires a running Android Studio with Gemini; see `references/android-cli-reference.md`)
+    - **Screenshot tests:** lock previews in with Compose Preview Screenshot Testing or Roborazzi so regressions fail CI — patterns in `references/testing-patterns.md`, workflow in `android-device-testing`
+
+### Step 8: XML Interop (Legacy)
+
+15. **Compose in XML:**
 
 ```xml
 <androidx.compose.ui.platform.ComposeView
@@ -290,7 +327,7 @@ binding.composeView.setContent {
 }
 ```
 
-13. **XML in Compose:**
+16. **XML in Compose:**
 
 ```kotlin
 @Composable
@@ -317,7 +354,10 @@ fun LegacyMapView(modifier: Modifier = Modifier) {
 
 - Composable without `Modifier` parameter
 - `collectAsState` instead of `collectAsStateWithLifecycle`
-- NavController passed directly to screen composables
+- Back stack (or a NavController) passed directly to screen composables
+- String routes or new `NavHost`/`rememberNavController` code in a Nav3 app
+- Layout branching on orientation or "isTablet" instead of window size class
+- `android:screenOrientation="portrait"` on activities (ignored ≥600dp from API 37)
 - Hardcoded colors/sizes instead of Material theme tokens
 - Missing loading, empty, or error states
 - No `@Preview` functions
@@ -330,9 +370,11 @@ fun LegacyMapView(modifier: Modifier = Modifier) {
 - [ ] State hoisted — composables are stateless and testable
 - [ ] All UI states handled (loading, success, empty, error)
 - [ ] Material 3 theme tokens used (no hardcoded colors/sizes)
-- [ ] Navigation callbacks passed to screens (not NavController)
+- [ ] Navigation callbacks passed to screens (not the back stack/NavController)
+- [ ] Routes are `@Serializable` types rendered via `NavDisplay` (Navigation 3)
+- [ ] Layout verified at Compact and Expanded window sizes (resizable emulator or `@Preview(device = ...)`)
 - [ ] `collectAsStateWithLifecycle` used for Flow collection
-- [ ] Previews exist for screens and key components
+- [ ] Previews exist for screens and key components — and rendered/screenshot-tested, not just written
 - [ ] `./gradlew assembleDebug` builds successfully
 - [ ] Layout Inspector shows reasonable recomposition counts
 - [ ] On-device hierarchy inspected via `android layout --pretty` when verifying Compose output against `@Preview` (see `references/android-cli-reference.md`)
