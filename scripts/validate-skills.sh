@@ -5,6 +5,8 @@
 #   - the six required sections are present (meta-skill exempt)
 #   - body is <= 500 lines
 #   - AGENTS.md and README.md skill listings match the skills on disk
+#   - prose skill counts ("All 30 Skills", "30 specialized workflows",
+#     "all 30 at once") in the docs and skills match the skills on disk
 # Runs in CI on every PR; run locally before pushing a skill change.
 set -euo pipefail
 
@@ -95,8 +97,21 @@ while IFS= read -r ref; do
   [[ -d "skills/$ref" ]] || err "AGENTS.md: references non-existent skill '$ref'"
 done < <(grep -oE '[a-z0-9-]+/SKILL\.md' AGENTS.md | cut -d/ -f1 | sort -u)
 
+# Prose skill counts must match the skills on disk. Matches "N skills",
+# "N Android skills", "N specialized workflows" and "all N"; ranges such as
+# "2–3 skills" are advice, not counts, and are skipped.
+SKILL_COUNT=$(echo "$SKILL_DIRS" | wc -l | tr -d ' ')
+COUNT_PATTERN='([0-9]+[–-])?[0-9]+ (Android |specialized )?(skills|Skills|workflows)\b|\b[Aa]ll [0-9]+\b'
+while IFS= read -r hit; do
+  location="${hit%:*}"   # file:line
+  match="${hit##*:}"
+  [[ "$match" =~ [0-9][–-] ]] && continue
+  n="$(grep -oE '[0-9]+' <<< "$match" | head -1)"
+  [[ "$n" == "$SKILL_COUNT" ]] || err "$location: says '$match' but there are $SKILL_COUNT skills"
+done < <(grep -noE "$COUNT_PATTERN" README.md AGENTS.md CONTRIBUTING.md docs/*.md skills/*/SKILL.md || true)
+
 if (( FAIL )); then
   echo "Skill validation failed."
   exit 1
 fi
-echo "OK: $(echo "$SKILL_DIRS" | wc -l | tr -d ' ') skills validated."
+echo "OK: $SKILL_COUNT skills validated."
