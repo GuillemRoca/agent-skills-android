@@ -115,3 +115,10 @@ Then review by hand:
 2. Follow the structure and quality standards above
 3. Ensure no web-specific language leaks (no npm, React, Playwright, etc.)
 4. Submit a PR with a description of what the skill covers and when to use it
+
+## Releases
+
+There is no version to bump. `.claude-plugin/plugin.json` intentionally has no `version` field, so Claude Code identifies each release by the git commit SHA of `main`: **every merge to `main` ships to users** on their next `claude plugin update`.
+
+- Keep `main` releasable — land changes through PRs with green CI, never push directly.
+- Don't add a `version` field back. Once present, users only receive updates when it changes, and a forgotten bump silently freezes everyone on the old release. CI fails if it reappears.

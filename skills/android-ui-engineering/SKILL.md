@@ -166,7 +166,7 @@ Text(
 
 ### Step 4: Navigation (Navigation 3)
 
-Use **Navigation 3** (`androidx.navigation3:navigation3-runtime` + `navigation3-ui`, stable) for new Compose apps. The back stack is state you own — no opaque `NavController`.
+Use **Navigation 3** (`androidx.navigation3:navigation3-runtime` + `navigation3-ui`, stable) for new Compose apps. The back stack is state you own — no opaque `NavController`. For deep links, multiple back stacks, scenes, conditional flows, and Nav2→Nav3 migration, see `android-skills:navigation-3` (optional Google companion plugin, see README).
 
 7. **Navigation 3 setup:**
 
@@ -231,6 +231,7 @@ val useTwoPane = windowSizeClass.isWidthAtLeastBreakpoint(
     - Edge-to-edge is the default (enforced targeting Android 15+): call `enableEdgeToEdge()`, consume `WindowInsets` in scaffolds, never rely on `statusBarColor`
     - Predictive back: use `PredictiveBackHandler`/`OnBackPressedDispatcher` — never override `onBackPressed()` (default-on targeting 36+)
     - State survives size changes: `ViewModel` + `rememberSaveable`, not `configChanges` hacks
+    - Deeper guides: `android-skills:adaptive` (pointer/keyboard input, Grid/FlexBox, Nav3 scenes) and `android-skills:edge-to-edge` (insets, IME, system bar legibility) (optional Google companion plugin, see README)
 
 ### Step 6: Recomposition Optimization
 
@@ -309,6 +310,8 @@ private fun TaskListScreenPreview() {
     - **Screenshot tests:** lock previews in with Compose Preview Screenshot Testing or Roborazzi so regressions fail CI — patterns in `references/testing-patterns.md`, workflow in `android-device-testing`
 
 ### Step 8: XML Interop (Legacy)
+
+For a full screen-by-screen XML→Compose migration workflow, see `android-skills:migrate-xml-views-to-jetpack-compose` (optional Google companion plugin, see README).
 
 15. **Compose in XML:**
 

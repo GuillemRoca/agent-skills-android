@@ -152,9 +152,13 @@ class LegacyFragment : Fragment() {
 }
 ```
 
+   Per-screen migration workflow: `android-skills:migrate-xml-views-to-jetpack-compose` (optional Google companion plugin, see README).
+
+10. **Guided library upgrades** (optional Google companion plugin, see README): `android-skills:agp-9-upgrade` (AGP 9, non-KMP), `android-skills:play-billing-library-version-upgrade`, `android-skills:camerax` (Camera1/Camera2 → CameraX), `android-skills:leanback-to-compose-tv-migration`.
+
 ### Step 5: Kotlin Version Migration
 
-10. **Kotlin version upgrade checklist:**
+11. **Kotlin version upgrade checklist:**
 
 ```markdown
 ## Kotlin X.Y → X.Z Migration
@@ -178,7 +182,7 @@ instead of guessing from memory.
 
 ### Step 6: Cleanup
 
-11. **After migration is complete:**
+12. **After migration is complete:**
     - Remove deprecated code (don't leave dead code)
     - Remove feature flags used for migration
     - Remove adapter layers (strangler pattern cleanup)
