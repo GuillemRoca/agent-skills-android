@@ -93,6 +93,8 @@ Run the validator first — it enforces the structural rules automatically and r
 
 It checks: frontmatter (`name` matches the kebab-case directory, ≤64 chars; `description` starts with "Use when", ≤1024 chars), the six required sections (meta-skill exempt), the 500-line cap, and that `AGENTS.md`/`README.md` skill tables list exactly the skills on disk.
 
+If you touch `hooks/session-start.sh`, also run `./hooks/session-start-test.sh` (CI runs it too). The script must emit the standard SessionStart envelope (`hookSpecificOutput.additionalContext`) on every path. The plugin deliberately does not register it — Claude Code routes skills natively, and always-on injection of `using-agent-skills` would create a second router (see [docs/getting-started.md](docs/getting-started.md#hooks-hooks)).
+
 Then review by hand:
 
 1. **Description trigger** — does it clearly state when to use?
