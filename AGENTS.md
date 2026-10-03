@@ -14,7 +14,7 @@ DEFINE → PLAN → BUILD → VERIFY → REVIEW → SHIP
 
 | Phase      | Skills                                                                                                                                                                                                                  | Purpose                                            |
 |------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------|
-| **DEFINE** | `interview-me`, `idea-refine`, `spec-driven-development`, `context-engineering`                                                                                                                                                                                            | Sharpen ideas, write specs, set up AI context      |
+| **DEFINE** | `interview-me`, `idea-refine`, `spec-driven-development`, `context-engineering`, `constraint-driven-development`                                                                                                                                                                                    | Sharpen ideas, write specs, set up AI context      |
 | **PLAN**   | `planning-and-task-breakdown`, `android-architecture`                                                                                                                                                                                                                     | Break work into tasks, make architecture decisions |
 | **BUILD**  | `incremental-implementation`, `test-driven-development`, `android-ui-engineering`, `android-data-persistence`, `android-background-work`, `api-and-interface-design`, `source-driven-development`, `doubt-driven-development`, `code-simplification`, `documentation-and-adrs` | Implement incrementally with TDD                   |
 | **VERIFY** | `android-device-testing`, `android-e2e-verification`, `android-accessibility`, `debugging-and-error-recovery`, `performance-optimization`                                                                                                                                 | Test, debug, and validate                          |
@@ -52,6 +52,7 @@ skills/
 ├── git-workflow-and-versioning/SKILL.md
 ├── shipping-and-launch/SKILL.md
 ├── code-simplification/SKILL.md
+├── constraint-driven-development/SKILL.md
 ├── context-engineering/SKILL.md
 ├── documentation-and-adrs/SKILL.md
 ├── source-driven-development/SKILL.md
@@ -100,6 +101,7 @@ Instructions map to development phases:
 | Phase               | Skills Used                                                                       |
 |---------------------|-----------------------------------------------------------------------------------|
 | Specification       | `interview-me` (when vague) + `spec-driven-development`                           |
+| Quality bar         | `constraint-driven-development`                                                   |
 | Planning            | `planning-and-task-breakdown`                                                     |
 | Building            | `incremental-implementation` + `test-driven-development`                          |
 | Testing             | `test-driven-development` + `android-device-testing` + `android-e2e-verification` |

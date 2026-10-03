@@ -4,7 +4,7 @@ description: >-
   Use when starting a session or selecting a skill for a task. Meta-skill
   defining five core agent behaviors: assumption surfacing, confusion
   management, constructive pushback, simplicity enforcement, and scope
-  discipline. Includes the skill discovery flowchart for all 29 Android skills.
+  discipline. Includes the skill discovery flowchart for all 30 Android skills.
 ---
 
 # Using Agent Skills (Android)
@@ -75,6 +75,9 @@ What are you trying to do?
 ├─ "I need to write a spec"
 │   └─ spec-driven-development
 │
+├─ "No quality bar is written down" / "the agent keeps silencing checks"
+│   └─ constraint-driven-development
+│
 ├─ "I need to plan implementation"
 │   └─ planning-and-task-breakdown
 │
@@ -126,7 +129,7 @@ What are you trying to do?
     └─ Start with idea-refine or context-engineering
 ```
 
-## Quick Reference: All 29 Skills
+## Quick Reference: All 30 Skills
 
 | Phase | Skill | Trigger |
 |-------|-------|---------|
@@ -134,6 +137,7 @@ What are you trying to do?
 | **DEFINE** | `idea-refine` | Vague idea needs sharpening |
 | **DEFINE** | `spec-driven-development` | Need a spec before coding |
 | **DEFINE** | `context-engineering` | Setting up AI context for project |
+| **DEFINE** | `constraint-driven-development` | Writing down and guarding the quality bar |
 | **PLAN** | `planning-and-task-breakdown` | Breaking work into tasks |
 | **PLAN** | `android-architecture` | Architecture decisions |
 | **BUILD** | `incremental-implementation` | Building feature step by step |
