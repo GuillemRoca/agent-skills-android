@@ -83,6 +83,27 @@ Timber.d("sync failed for user %s token %s", email, token)
    - `Log.d`/`Log.v` stripped in release via R8 (`-assumenosideeffects`, see `references/security-checklist.md`)
    - One event, one line, stable key=value shape — greppable beats prose
 
+**When several entry points write to one log, name the entry point.** The same `SyncWorker` enqueued periodically, by an FCM push, and by pull-to-refresh — plus a foreground service and the UI reporting sync errors to the same tag — produces interchangeable `sync_failed` lines and non-fatals. Attributing one then falls back to elimination (WorkManager history, device state, release timing), which holds only while those records still exist. Stamp the entry point where the run starts and carry it across the boundary, never re-derive it downstream:
+
+```kotlin
+// Enqueue site names the path; the worker reads it, it doesn't guess
+fun enqueueSync(entry: String) = WorkManager.getInstance(context).enqueue(
+    OneTimeWorkRequestBuilder<SyncWorker>()
+        .setInputData(workDataOf("entry" to entry))   // "fcm_push", "pull_to_refresh"; the periodic request sets "periodic"
+        .build()
+)
+
+// In SyncWorker.doWork()
+val entry = inputData.getString("entry") ?: "unknown"
+Timber.w("sync_failed entry=%s attempt=%d reason=%s", entry, runAttemptCount, reason.name)
+FirebaseCrashlytics.getInstance().recordException(
+    NonFatalSyncError(cause),
+    CustomKeysAndValues.Builder().putString("entry", entry).build()  // per-event, not global
+)
+```
+
+Prefer per-event keys over `setCustomKey("entry", ...)`: global custom keys are last-write-wins across the process, so concurrent workers overwrite each other's entry point. A field that merely correlates with an entry point (thread name, screen) is a hint, not an attribution.
+
 ### Step 4: Performance Instrumentation
 
 6. **Measure startup honestly with `reportFullyDrawn`:**
@@ -122,6 +143,22 @@ trace.stop()
    - Compare version-over-version, not absolute: a new crash cluster at 5% rollout predicts the 100% disaster
    - Watch: Crashlytics velocity alerts, Vitals per-version, key business events (did sign-ins drop?)
 
+### Step 6: Runbooks for Every Alert
+
+10. **Every alert links to a runbook** — Crashlytics velocity alerts, ANR spikes, backend error rate on mobile endpoints. A runbook answers three questions without making the on-call reader think: what it means, what to check first, who to escalate to. Store them in `docs/runbooks/`, named after the alert, and put the link in the alert itself.
+
+```markdown
+# Runbook: Crashlytics velocity alert on new version
+**Means:** A crash cluster is growing fast — likely a regression in the version under staged rollout.
+**First check:** Is the issue in the newest versionCode only? If yes, halt the staged rollout
+  (Play Console → Release → Production → Halt rollout), then check Remote Config flags changed
+  in the last 24h — a flag flip can crash old versions too.
+**Escalate to:** Release owner for this version; #android-oncall if a kill switch is needed.
+```
+
+11. **Expand beyond three lines only when the first check can't decide.** Five steps covering the three most common causes beat twenty steps covering every edge case — the long one gets skimmed at 3 a.m.
+12. **Update the runbook when closing every incident it was used in.** A wrong or missing step is fixed before the incident is marked resolved; a stale runbook builds false confidence.
+
 ## Common Rationalizations
 
 | Shortcut | Why It Fails |
@@ -131,6 +168,8 @@ trace.stop()
 | "Logs are enough" | Release builds strip logs, and users don't send logcat. Telemetry is what you actually get from the field. |
 | "PII in logs is fine, it's just debug" | Debug logs leak into bug reports, screenshots, and third-party SDK capture. Treat every log line as public. |
 | "Vitals looks fine, ship it" | Vitals lags by days. Version-scoped Crashlytics velocity is your early-warning system during rollout. |
+| "The stack trace tells us which path crashed" | Not when a periodic worker, a push-triggered run, and pull-to-refresh share the same code. Without an entry-point key you attribute by elimination and guess. |
+| "Everyone knows what to do when that alert fires" | Until it fires at 3 a.m. for the one person who doesn't. An alert without a runbook turns every incident into rediscovery. |
 
 ## Red Flags
 
@@ -139,6 +178,9 @@ trace.stop()
 - Release builds still planting `Timber.DebugTree()`
 - No mapping file upload in the release pipeline
 - Staged rollout with no written abort criteria
+- One log tag or non-fatal type fed by several Workers, a service, and the UI, with no field naming which one produced it
+- Entry point set via global `setCustomKey` from concurrent paths, or re-derived inside the Worker instead of passed in
+- Alerts with no runbook link, or runbooks untouched after the incidents they were used in
 - Startup "measured" only by TTID with no `reportFullyDrawn`
 - Performance claims in PRs with no Macrobenchmark or trace evidence
 
@@ -151,3 +193,5 @@ trace.stop()
 - [ ] `reportFullyDrawn` called when primary content is usable
 - [ ] Macrobenchmark (or trace) evidence attached for performance-sensitive changes
 - [ ] Rollout abort criteria written down with owner and thresholds
+- [ ] Every log stream or non-fatal reached from more than one entry point carries an `entry` field, set where the run starts and passed across Worker/service boundaries
+- [ ] Every alert links to a runbook in `docs/runbooks/` stating what it means, the first check, and who to escalate to

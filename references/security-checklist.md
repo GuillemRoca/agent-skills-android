@@ -18,6 +18,8 @@
 </data-extraction-rules>
 ```
 
+- [ ] **Pre-API 31 backup rules** — if `minSdk` < 31, mirror the exclusions in `android:fullBackupContent` (`dataExtractionRules` is ignored on API 30 and below)
+
 ## Network Security
 
 - [ ] **Network Security Config** present in `res/xml/network_security_config.xml`

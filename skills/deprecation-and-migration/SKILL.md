@@ -2,8 +2,10 @@
 name: deprecation-and-migration
 description: >-
   Use when deprecating APIs, bumping minSdk, migrating libraries (AndroidX,
-  Compose, Kotlin versions), or removing legacy code. Covers Kotlin
-  @Deprecated annotation, strangler pattern, and incremental migration.
+  Compose, Kotlin versions), changing an API contract or database schema,
+  or removing legacy code. Covers Kotlin @Deprecated annotation, strangler
+  pattern, expand/contract for API and schema changes, and incremental
+  migration.
 ---
 
 # Deprecation and Migration
@@ -20,6 +22,7 @@ description: >-
 - Removing legacy feature flags or dead code
 - Migrating from XML to Compose
 - Upgrading from Java to Kotlin in existing modules
+- Renaming/removing a field or endpoint the app consumes, or changing a Room or server schema
 
 **Skip when:** The code has no callers and can be deleted outright.
 
@@ -180,9 +183,53 @@ To resolve the current compatible AGP/Kotlin/Compose versions authoritatively, u
 running Android Studio are available (see `references/android-cli-reference.md`),
 instead of guessing from memory.
 
-### Step 6: Cleanup
+### Step 6: API Contract and Schema Changes (Expand/Contract)
 
-12. **After migration is complete:**
+Old app versions stay installed for months or years and keep calling your API — users don't all update, and you can't roll their builds back. So a server contract change can never be "change it in place and ship the app the same day". Migrate in additive phases so every app version still in the wild stays valid at every step:
+
+```
+EXPAND (server)      → SHIP (app)              → WAIT / FORCE          → CONTRACT (server)
+add new field or       read new, fall back to    old-version share below   stop sending old field;
+endpoint alongside     old; tolerate unknowns    threshold, or min-version later, remove app fallback
+the old one                                      gate forces the upgrade
+```
+
+12. **Worked example — renaming JSON field `name` → `fullName`:**
+    1. **Expand.** Server returns *both* `name` and `fullName`, and accepts both on writes. Deploy.
+    2. **Ship.** App reads `fullName ?: name`. Release it as version N.
+    3. **Wait or force.** Check the version distribution (Play Console statistics by app version, or your analytics) until builds below N fall under an agreed threshold — or raise a minimum supported version (remote config or a backend check) that routes older builds to a force-update screen using Play In-App Updates' immediate flow.
+    4. **Contract.** Server stops sending `name`. In a *later* app release, delete the fallback.
+
+13. **Clients must tolerate change they don't know about yet:**
+
+```kotlin
+val networkJson = Json {
+    ignoreUnknownKeys = true  // server may add fields this build has never seen
+    coerceInputValues = true  // unknown enum value -> the property's default
+}
+
+@Serializable
+enum class AccountStatus { ACTIVE, SUSPENDED, UNKNOWN }
+
+@Serializable
+data class UserDto(
+    val name: String? = null,     // old field, still sent during the window
+    val fullName: String? = null, // new field
+    val status: AccountStatus = AccountStatus.UNKNOWN,
+) {
+    val displayName: String get() = fullName ?: name.orEmpty()
+}
+```
+
+   Add a unit test that decodes a payload with an extra field and an unrecognised enum value — it must not throw.
+
+14. **Local Room schema:** migrations run on-device in one step at app upgrade, so there is no mixed-version window for the local database — a rename can be a single `Migration` or `AutoMigration`. The rules from `android-data-persistence` (Step 2) still hold: write the migration, test it with `MigrationTestHelper`, never `fallbackToDestructiveMigration()`. Two mobile twists: (a) **rollback is roll-forward** — Play rejects a lower `versionCode` and Room won't downgrade, so a "revert" build must keep the new database version (or migrate forward again); (b) **synced data** follows the API contract above, so the sync layer must accept both shapes during the window.
+
+15. **Server-owned databases** (if your team owns the backend): same pattern — add the new column nullable, dual-write, backfill in throttled batches, switch reads, then drop the old column in its own later deploy.
+
+### Step 7: Cleanup
+
+16. **After migration is complete:**
     - Remove deprecated code (don't leave dead code)
     - Remove feature flags used for migration
     - Remove adapter layers (strangler pattern cleanup)
@@ -197,6 +244,9 @@ instead of guessing from memory.
 | "Just delete it, no one uses it" | Check callers first. Hyrum's Law: someone depends on behavior you didn't intend. |
 | "The deprecated code still works" | It works until the next API level bump, library update, or security patch. |
 | "We'll clean up the feature flags later" | Dead flags are tech debt with runtime cost. Clean up within 2 sprints of rollout. |
+| "Rename the field server-side; the app update ships the same day" | Old builds keep calling the API for months. Expand first; contract only once old-version share is below threshold or a min-version gate forces the upgrade. |
+| "Strict JSON parsing catches server bugs" | It turns every additive server change into a crash in builds you can no longer fix. Use `ignoreUnknownKeys` and an `UNKNOWN` enum fallback; catch server bugs with contract tests. |
+| "If the migration breaks, we'll roll back the release" | Play won't take a lower `versionCode` and Room won't downgrade. Rollback is a new build that keeps the new schema version. |
 
 ## Red Flags
 
@@ -207,6 +257,10 @@ instead of guessing from memory.
 - Feature flags older than 3 months
 - minSdk bump without testing on the new minimum API level
 - Deleted code that should have been deprecated first (library consumers exist)
+- A server field or endpoint removed/renamed while app versions that read it still have meaningful active share
+- Network `Json` without `ignoreUnknownKeys`, or network enums with no `UNKNOWN` fallback
+- A breaking API change with no minimum-supported-version mechanism to fall back on
+- A rollback plan that lowers the Room database version
 
 ## Verification
 
@@ -219,3 +273,10 @@ instead of guessing from memory.
 - [ ] Removed code verified with `grep` — no remaining references
 - [ ] ADR written for significant migration decisions
 - [ ] `./gradlew build` and `./gradlew test` pass after migration
+
+After an API contract or schema change:
+
+- [ ] The change ships expand → app release → wait/force → contract; the contract step cites the old-version share (or the min-version gate) that allowed it
+- [ ] A unit test decodes a payload with an unknown field and an unknown enum value without throwing
+- [ ] Room schema change has a `Migration`/`AutoMigration` and a passing `MigrationTestHelper` test (`./gradlew connectedAndroidTest`), with no destructive fallback
+- [ ] The rollback build keeps the current database version

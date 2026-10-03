@@ -3,7 +3,8 @@ name: security-and-hardening
 description: >-
   Use when handling sensitive data, authentication, network communication,
   or before shipping to the Play Store. Three-tier framework (Always Do,
-  Ask First, Never Do) with Android-specific security patterns.
+  Ask First, Never Do) with Android-specific security patterns, plus data
+  privacy and compliance (GDPR/CCPA, Play Data safety, account deletion).
 ---
 
 # Security and Hardening
@@ -20,6 +21,7 @@ Security is a development constraint, not an afterthought. This skill provides a
 - Reviewing code that touches authentication or authorization
 - Setting up ProGuard/R8 rules
 - Implementing WebView features
+- Collecting personal data, adding analytics/ads SDKs, or answering privacy requirements (GDPR, CCPA, Play Data safety)
 
 **Skip when:** Changes are purely cosmetic with no data or network impact.
 
@@ -226,6 +228,36 @@ webView.webViewClient = object : WebViewClient() {
 // webView.addJavascriptInterface(dangerousObject, "Android") // DON'T
 ```
 
+### Data Privacy & Compliance
+
+10. **Hold less, for less time.** Security asks "can an attacker read it?"; privacy asks "should we hold it at all, and for how long?" Data never collected cannot be breached, mis-declared, or missed in a deletion. Classify every field as you add it:
+
+| Class | Android examples | Handling |
+|-------|------------------|----------|
+| **Non-personal** | Aggregate counts, app version, crash-free rate | Normal handling |
+| **Personal (PII)** | Name, email, IP, user ID, advertising ID, Android ID / other device IDs | Minimize, access-control, include in export/delete, declare in Data safety |
+| **Sensitive** | Precise location, health, biometrics, contacts, photos/media, financial data, anything about minors | Explicit basis or consent, Keystore-backed encryption, never in cloud backup or logs |
+
+**Operating rules:**
+- **Collect against a stated purpose.** "Might be useful later" is breach scope, not a purpose. Don't log PII — `observability-and-instrumentation` covers log hygiene.
+- **Minimize permissions.** Prefer the Photo Picker (`ActivityResultContracts.PickVisualMedia`) over `READ_MEDIA_IMAGES`, `ACCESS_COARSE_LOCATION` over `ACCESS_FINE_LOCATION`, and system pickers/intents over broad read permissions. Every permission you don't hold is data you can't leak.
+- **Gate SDKs on consent.** Analytics, ads, and attribution SDKs must not start collecting in `Application.onCreate` before the user has chosen. Default collection off, then enable from the consent result:
+
+```kotlin
+// AndroidManifest.xml: <meta-data android:name="firebase_analytics_collection_enabled" android:value="false" />
+fun applyConsent(analytics: FirebaseAnalytics, granted: Boolean) {
+    val status = if (granted) ConsentStatus.GRANTED else ConsentStatus.DENIED
+    analytics.setConsent(mapOf(ConsentType.ANALYTICS_STORAGE to status, ConsentType.AD_STORAGE to status))
+    analytics.setAnalyticsCollectionEnabled(granted)
+}
+```
+
+- **Declare what you actually ship.** The Play Data safety form must match real collection, *including every third-party SDK* (analytics, ads, crash reporting, attribution). Check each SDK's own data-disclosure docs and re-check the form whenever an SDK is added or upgraded.
+- **Account deletion is a Play requirement.** Apps that let users create an account must offer deletion both in-app and via a web link listed in Play Console, and deleting the account must delete (or anonymize) its associated data — not just flip an `isDeleted` flag.
+- **Set retention and make deletion reach every copy.** On sign-out or account deletion, clear Room tables, DataStore, files and caches, cancel WorkManager jobs whose input data carries personal payloads, and trigger server-side and analytics-vendor deletion. Exclude tokens, PII, and anything bound to a Keystore key (undecryptable after restore anyway) from Auto Backup — `android:dataExtractionRules` for API 31+, `android:fullBackupContent` for API 30 and below. Set both if `minSdk` < 31.
+- **Design data-subject rights into the schema.** GDPR/CCPA export, correction, and deletion are engineering features: key personal data by user ID so it is *findable* and *erasable*, not smeared across denormalized tables, blobs, and logs.
+- **Make policy configurable by region.** Consent requirements and residency rules differ by user location — keep them behind a config boundary rather than hardcoding one jurisdiction.
+
 ### OWASP Mobile Top 10 Quick Reference
 
 | # | Risk | Android Mitigation |
@@ -249,6 +281,9 @@ webView.webViewClient = object : WebViewClient() {
 | "Our API already validates input" | Client validation improves UX; server validation prevents exploits. Both needed. |
 | "We don't need cert pinning for v1" | v1 is when MITM attacks are most damaging — no monitoring to detect them. |
 | "ProGuard breaks too many things" | Configure it properly with `@Keep` annotations. The security cost of skipping is higher. |
+| "Collect it now, we might need it later" | Data you don't hold can't be breached or mis-declared. "Might need it" is breach scope, not a purpose. |
+| "The SDK handles its own privacy" | You declare its collection in Data safety and you answer for it. Gate it on consent and read its disclosure docs. |
+| "Delete account = mark the user deleted" | Play requires the associated data to be deleted. Local DBs, backups, queued work, and vendor copies all hold it. |
 
 ## Red Flags
 
@@ -262,6 +297,11 @@ webView.webViewClient = object : WebViewClient() {
 - WebView with unrestricted JavaScript
 - No ProGuard/R8 in release builds
 - Disabled certificate verification
+- Analytics/ads SDK initialized in `Application.onCreate` before consent is captured
+- New SDK or permission added without a Data safety form update
+- Account deletion that only flips a flag, or no web deletion link
+- `READ_MEDIA_IMAGES` / `ACCESS_FINE_LOCATION` where the Photo Picker / coarse location would do
+- Auth tokens or PII included in Auto Backup (no `dataExtractionRules` / `fullBackupContent`)
 
 ## Verification
 
@@ -276,3 +316,8 @@ webView.webViewClient = object : WebViewClient() {
 - [ ] `local.properties` in `.gitignore`
 - [ ] `android:debuggable` not set (defaults to false for release)
 - [ ] WebView (if used) restricts domains and JavaScript exposure
+- [ ] Every personal-data field classified and tied to a stated purpose
+- [ ] Analytics/ads SDKs collect nothing before consent (verify with a network inspector on a fresh install)
+- [ ] Data safety form matches actual collection, including third-party SDKs
+- [ ] Account deletion works in-app and via web link, and removes local, backup, queued, server, and vendor copies
+- [ ] Backup rules exclude tokens/PII for both API 31+ and API 30-and-below paths

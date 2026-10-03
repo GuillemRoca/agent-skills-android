@@ -3,7 +3,8 @@ name: api-and-interface-design
 description: >-
   Use when designing interfaces between layers (Repository, UseCase, API
   client) or defining data contracts. Covers Retrofit interfaces, Room
-  DAOs, Kotlin sealed classes, and backward compatibility.
+  DAOs, Kotlin sealed classes, backward compatibility, and idempotency
+  keys for safely retried writes.
 ---
 
 # API and Interface Design
@@ -20,6 +21,7 @@ Hyrum's Law: "With a sufficient number of users of an API, all observable behavi
 - Defining ViewModel ↔ UI contracts (UiState, Events)
 - Changing any public interface in a shared module
 - Designing inter-module contracts in multi-module projects
+- Sending state-changing requests that can be retried (payments, orders, messages, uploads)
 
 **Skip when:** Modifying internal (private) implementation details.
 
@@ -217,6 +219,46 @@ class TaskRepositoryImpl @Inject constructor(
 }
 ```
 
+### Step 8: Idempotency Keys for Retried Writes
+
+12. **Assume every write is sent more than once.** On Android, duplicates come from OkHttp's `retryOnConnectionFailure`, caller retry loops, WorkManager retries with backoff, double-taps, and process death between sending a request and persisting the response. A timeout means *unknown*, not *failed* — the server may already have applied it. For non-idempotent writes (`POST` that charges, orders, sends), attach an `Idempotency-Key`.
+
+**Key the intent, not the attempt.** Generate a UUID once when the user commits the action, persist it *with* the pending operation (Room outbox row or WorkManager `inputData`), and reuse it on every retry — including after process death:
+
+```kotlin
+@Entity data class PendingOrder(@PrimaryKey val idempotencyKey: String, val cartId: String, val payload: String)
+
+suspend fun placeOrder(cart: Cart) {                       // runs once per user intent
+    val op = PendingOrder(UUID.randomUUID().toString(), cart.id, json.encodeToString(cart.toRequest()))
+    outboxDao.insert(op)                                   // key survives process death
+    workManager.enqueue(OneTimeWorkRequestBuilder<SubmitOrderWorker>()
+        .setInputData(workDataOf("key" to op.idempotencyKey)).build())
+}
+
+interface OrderApi {
+    @POST("orders")
+    suspend fun createOrder(@Header("Idempotency-Key") key: String, @Body body: CreateOrderRequest): OrderResponse
+}
+
+// In SubmitOrderWorker.doWork(): same key on every attempt
+val key = inputData.getString("key") ?: return Result.failure()
+val op = outboxDao.get(key) ?: return Result.success()     // already submitted
+return try {
+    api.createOrder(op.idempotencyKey, json.decodeFromString(op.payload))
+    outboxDao.delete(op)
+    Result.success()
+} catch (e: IOException) {
+    Result.retry()                                         // outcome unknown: retry with the same key
+} catch (e: HttpException) {
+    if (e.code() == 409) Result.retry() else Result.failure() // 409 = still in flight (check your server's contract)
+}
+```
+
+- **Never** generate the key inside an OkHttp interceptor, the Retrofit call, or `doWork()` — that layer runs once per attempt. If you prefer an interceptor over `@Header`, pass the stored key via a Retrofit `@Tag` and read it with `request.tag()`.
+- Don't derive the key from content (`"$userId:$amount"`) — two legitimate identical orders would collapse into one.
+
+**Know the server contract** (usually another team's): it stores key + request fingerprint + response, replays the stored response for a repeat, rejects the same key with a *different* body (`422`, sometimes `409`), returns `409` while the first attempt is still in flight, and expires keys after a window. Client consequences: treat a replayed response as success, retry an in-flight `409` with backoff, treat a body-mismatch error as a client bug (never "fix" it with a new key), and keep the outbox retry horizon shorter than the server's key expiry.
+
 ## Common Rationalizations
 
 | Shortcut | Why It Fails |
@@ -225,6 +267,9 @@ class TaskRepositoryImpl @Inject constructor(
 | "One model for all layers is simpler" | Coupling DB schema to API to UI makes all three brittle. |
 | "Strings are fine for types" | Strings allow typos, have no exhaustiveness checking, and no IDE support. |
 | "We don't need backward compatibility yet" | By the time you need it, you have callers you can't easily find. |
+| "Duplicate requests are rare" | They're correlated with bad networks and degraded backends — exactly when retries spike and duplicates cost most. |
+| "A new key per retry is fine, the server dedupes" | The server dedupes by key. A fresh key per attempt is a fresh charge per attempt. |
+| "The key can live in memory" | Process death mid-request is routine on Android. A key that isn't persisted with the operation is lost exactly when a retry is needed. |
 
 ## Red Flags
 
@@ -235,6 +280,10 @@ class TaskRepositoryImpl @Inject constructor(
 - Breaking interface changes without deprecation
 - `Any` or `Object` in public interfaces
 - Inconsistent naming across layers
+- Non-idempotent `POST` (payment, order, message) retried without an `Idempotency-Key`
+- `UUID.randomUUID()` for the key inside an interceptor, API call, or `doWork()`
+- Idempotency key held only in memory or a ViewModel, not persisted with the pending operation
+- A `409`/`422` on a keyed request "handled" by retrying with a new key
 
 ## Verification
 
@@ -246,3 +295,6 @@ class TaskRepositoryImpl @Inject constructor(
 - [ ] Naming follows project conventions
 - [ ] Backward compatibility maintained (or breaking change documented)
 - [ ] Tests verify interface contracts
+- [ ] Every retryable state-changing request sends an `Idempotency-Key`, or is documented as unsafe to retry
+- [ ] Key is generated once per user intent and persisted with the pending operation (test: kill the process mid-request, the retry sends the same key)
+- [ ] `409`/`422` and replayed responses are handled per the server contract, and the client retry horizon is shorter than server key expiry

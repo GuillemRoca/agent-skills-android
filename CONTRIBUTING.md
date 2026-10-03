@@ -91,7 +91,7 @@ Run the validator first — it enforces the structural rules automatically and r
 ./scripts/validate-skills.sh
 ```
 
-It checks: frontmatter (`name` matches the kebab-case directory, ≤64 chars; `description` starts with "Use when", ≤1024 chars), the six required sections (meta-skill exempt), the 500-line cap, and that `AGENTS.md`/`README.md` skill tables list exactly the skills on disk.
+It checks: frontmatter (`name` matches the kebab-case directory, ≤64 chars; `description` starts with "Use when", ≤1024 chars), the six required sections (meta-skill exempt), the 500-line cap, that `AGENTS.md`/`README.md` skill tables list exactly the skills on disk, and that every prose skill count ("All 30 Skills", "30 specialized workflows", "all 30 at once") in the docs and skills matches the number of skills on disk — when you add or remove a skill, update those counts.
 
 If you touch `hooks/session-start.sh`, also run `./hooks/session-start-test.sh` (CI runs it too). The script must emit the standard SessionStart envelope (`hookSpecificOutput.additionalContext`) on every path. The plugin deliberately does not register it — Claude Code routes skills natively, and always-on injection of `using-agent-skills` would create a second router (see [docs/getting-started.md](docs/getting-started.md#hooks-hooks)).
 

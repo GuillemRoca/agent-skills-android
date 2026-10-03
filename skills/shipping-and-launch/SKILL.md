@@ -128,6 +128,33 @@ Day 7: If clean → expand to 100%
 | Error rate > 0.1% new errors | Investigate, consider halt |
 | Startup time regression > 20% | Investigate, consider halt |
 
+#### Error Budget Release Gate
+
+The thresholds above decide whether *this* rollout continues; the error budget decides whether you should be starting a rollout at all. Set a stability SLO — typically crash-free users (e.g. 99.5%) plus user-perceived crash and ANR rates below the Play bad-behavior thresholds (1.09% / 0.47%, see `observability-and-instrumentation`). The budget is the gap between the SLO and reality over a 28-day window, the same window Play Vitals uses:
+
+```kotlin
+// SLO 99.5% crash-free users → 0.5% of users may crash in 28 days
+fun budgetRemaining(sloCrashFree: Double, actualCrashFree28d: Double): Double {
+    val allowed = 1.0 - sloCrashFree          // 0.005
+    val consumed = 1.0 - actualCrashFree28d   // e.g. 0.003 at 99.7% crash-free
+    return ((allowed - consumed) / allowed).coerceAtLeast(0.0)  // 0.4 → 40% left
+}
+```
+
+Use it as an objective gate, not a negotiation:
+
+```
+Budget remaining > 20%   →  Normal staged rollout (1% → 5% → 25% → 50% → 100%)
+Budget remaining 0–20%   →  Slow rollouts only: smaller steps, longer bake per step,
+                            no high-risk changes (migrations, SDK upgrades, rewrites)
+Budget exhausted         →  Freeze feature releases; ship only stability fixes
+Play Vitals threshold    →  Treat as exhausted — Play may already be reducing
+  breached                  store visibility, so every release must lower the rate
+Budget recovers          →  Resume normal pace; keep the fix that recovered it
+```
+
+**Burn rate during rollout:** a crash or ANR rate on the newest version that is rising faster than the previous version's baseline is a **halt** signal (Play Console → Halt rollout), even while every row in the thresholds table is still green. The mobile twist makes the gate stricter than on a server: you cannot roll back an installed binary. Remediation is halt plus hotfix forward, or a Remote Config kill switch (see Step 4) — so budget spent at 25% rollout stays spent until users take the next update.
+
 ### Step 3: Feature Flag Management
 
 11. **Feature flag lifecycle:**
@@ -203,6 +230,8 @@ Expanded (25%) → Full (100%) → Removed (cleanup)
 | "Rollback plan isn't needed, it's a small change" | Small changes can have outsized impact. A 1-line change can cause a crash. |
 | "We'll monitor tomorrow" | The first few hours are critical. Issues compound overnight. |
 | "Let's ship 100% — we're confident" | Confidence without staged rollout is hope, not engineering. |
+| "The crash rate is under the halt threshold, keep expanding" | Check the burn rate, not just the current rate. A newest-version crash/ANR rate climbing faster than baseline is a halt signal while every threshold is still green — and installed binaries can't be rolled back. |
+| "The budget is gone, but this feature is already done" | An exhausted budget means stability fixes only. Shipping features on top of a burning release spends budget you don't have and risks Play visibility. |
 
 ## Red Flags
 
@@ -215,12 +244,15 @@ Expanded (25%) → Full (100%) → Removed (cleanup)
 - No Play Store compliance check
 - Missing deobfuscation mapping file upload
 - Launching on Friday (no monitoring over weekend)
+- Error budget exhausted (or a Vitals threshold breached) but feature releases continue unchanged
+- No stability SLO defined, so "is it safe to ship?" is decided by mood
 
 ## Verification
 
 - [ ] Pre-launch checklist complete (quality, security, performance, accessibility)
 - [ ] Release build signed with production keystore
 - [ ] Staged rollout plan defined
+- [ ] Error budget checked against the 28-day stability SLO, and the rollout pace matches the gate (normal / slow / stability-fixes-only)
 - [ ] Rollback strategy documented
 - [ ] Monitoring configured (Crashlytics, Performance, Analytics)
 - [ ] Play Store requirements met
