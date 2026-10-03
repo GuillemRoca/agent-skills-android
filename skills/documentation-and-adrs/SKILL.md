@@ -26,7 +26,14 @@ Document the *why* behind decisions, not just the code. Architecture Decision Re
 
 ### Architecture Decision Records (ADRs)
 
-1. **ADRs live in `docs/decisions/`** with sequential numbering:
+1. **Match the existing convention first.** Before creating an ADR, look for one already in the repo — existing ADRs, rules in `AGENTS.md`/`CLAUDE.md`, ADR tooling such as an `.adr-dir` file. An established convention overrides the defaults below:
+   - **Location and format** — e.g. `docs/adr/`, `docs/architecture/decisions/`, a MADR layout, an `adr-tools` setup. Match the directory, extension, and markup.
+   - **Numbering and naming** — continue the existing sequence and filename pattern; don't restart at 0001 or introduce a second scheme.
+   - **Section headings** — reuse the project's heading set rather than imposing this template's.
+
+   If the evidence conflicts, surface the conflict instead of silently adding another scheme.
+
+2. **With no convention, ADRs live in `docs/decisions/`** with sequential numbering:
    ```
    docs/decisions/
    ├── 0001-use-compose-over-xml.md
@@ -35,7 +42,7 @@ Document the *why* behind decisions, not just the code. Architecture Decision Re
    └── 0004-modularization-approach.md
    ```
 
-2. **ADR template:**
+3. **ADR template:** (new ADRs start at `Proposed`; move to `Accepted` once agreed)
 
 ```markdown
 # ADR-NNNN: Title
@@ -69,7 +76,7 @@ What did we decide to do?
 - ...
 ```
 
-3. **Never delete old ADRs** — supersede them with new ones that reference the old decision:
+4. **Never delete old ADRs** — supersede them with new ones that reference the old decision:
    ```
    ## Status
    Superseded by [ADR-0007](0007-switch-to-kmp.md)
@@ -77,7 +84,7 @@ What did we decide to do?
 
 ### Inline Documentation
 
-4. **Document intent, not mechanics:**
+5. **Document intent, not mechanics:**
 
 ```kotlin
 // BAD: increments counter by one
@@ -90,20 +97,20 @@ if (requestCount >= MAX_REQUESTS_PER_SECOND) {
 }
 ```
 
-5. **When to add inline comments:**
+6. **When to add inline comments:**
    - Non-obvious business logic
    - Platform workarounds (`// Workaround for API 28 camera permission bug`)
    - Performance-critical code paths
    - Regex patterns or complex algorithms
 
-6. **When NOT to add comments:**
+7. **When NOT to add comments:**
    - Code that reads clearly (self-documenting)
    - Commented-out code (delete it — git has history)
    - "TODO" without an issue reference (create the issue)
 
 ### API Documentation
 
-7. **Public APIs get KDoc:**
+8. **Public APIs get KDoc:**
 
 ```kotlin
 /**
@@ -117,7 +124,7 @@ if (requestCount >= MAX_REQUESTS_PER_SECOND) {
 suspend fun getUserProfile(userId: String): UserProfile?
 ```
 
-8. **Document module boundaries** — each module's `README.md` should describe:
+9. **Document module boundaries** — each module's `README.md` should describe:
    - Purpose of the module
    - Public API surface
    - Dependencies (what it depends on, what depends on it)
@@ -140,10 +147,11 @@ suspend fun getUserProfile(userId: String): UserProfile?
 - Public APIs without KDoc
 - Stale documentation that contradicts current implementation
 - ADRs deleted instead of superseded
+- A second ADR location or numbering scheme introduced next to an existing one
 
 ## Verification
 
-- [ ] Significant architectural decisions have ADRs in `docs/decisions/`
+- [ ] Significant architectural decisions have ADRs — in the project's existing ADR location and numbering, or `docs/decisions/` if none exists
 - [ ] ADRs include context, alternatives, and consequences
 - [ ] Old ADRs are superseded, not deleted
 - [ ] Inline comments explain *why*, not *what*

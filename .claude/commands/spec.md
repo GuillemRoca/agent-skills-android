@@ -6,6 +6,8 @@ Write a structured specification before writing any code.
 
 Load and follow the `spec-driven-development` skill from `skills/spec-driven-development/SKILL.md`.
 
+If the request bundles several independently testable capabilities, first propose a capability map (module ids, Gradle modules, dependency direction, build order) per the skill's Phase 0 and get it approved, then spec each module in dependency order.
+
 ### Clarifying Questions
 
 Before writing the spec, ask:
@@ -27,4 +29,4 @@ Document these sections in `SPEC.md`:
 
 ### Output
 
-Save as `SPEC.md` in the project root. This becomes the development contract — review with the human before implementation begins.
+Save as `SPEC.md` in the project root. This becomes the development contract. Summarize it, list open questions, ask for approval — then end the turn. Don't start planning or code until the human approves in a later turn.

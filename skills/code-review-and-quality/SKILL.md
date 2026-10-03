@@ -37,6 +37,9 @@ Review code across five axes: Correctness, Readability, Architecture, Security, 
    - Are edge cases covered (null, empty, error, boundary values)?
    - Do test names describe behavior?
    - Are tests independent (no shared mutable state)?
+   - Would a test fail if the new behavior regressed?
+
+   Answer the last question by experiment, not by reading: invert one condition the change adds (drop a `!`, swap `&&` for `||`, flip a `>=`), run that module's tests (`./gradlew :module:testDebugUnitTest`), then restore the file. A mutation that stays green is a finding — name the missing test case. For a project-wide mutation score, see `constraint-driven-development`.
 
 ### Step 3: Five-Axis Review
 
@@ -112,6 +115,16 @@ if (activeTask == null) return TaskListUiState.Empty
     - Memory leaks (Activity/Context references in singletons)
     - See `performance-optimization` for comprehensive checklist
 
+#### Dependency Upgrades
+
+An upgrade is a behavior change you didn't write. The riskiest ones are bulk "bump deps" PRs. Review them with the same discipline:
+
+- **Read the changelog, not just the version.** A "patch" can change behavior; a major bump (Kotlin, AGP, Compose BOM, Room) needs its migration notes read and the breakage found.
+- **One dependency per change** (or one tightly related group, e.g. a BOM and its artifacts). When a bulk bump breaks the build, you've lost which one did it.
+- **Let the tests decide.** Green suite before *and* after. If coverage around the dependency's behavior is thin, that gap is the finding — add a test first.
+- **Mind the transitive graph.** Review the resolved diff, not just `gradle/libs.versions.toml`: `./gradlew :app:dependencies --configuration releaseRuntimeClasspath` before and after. One direct bump can move dozens of transitive versions — and can raise your effective `minSdk` or `compileSdk`.
+- **Keep verification honest.** If the project uses dependency locking or `gradle/verification-metadata.xml`, regenerate them with Gradle (never hand-edit) and review their diff. For supply-chain risk, follow `security-and-hardening`.
+
 ### Step 4: Categorize Findings
 
 13. **Use severity categories:**
@@ -153,6 +166,8 @@ of manual field mapping for partial updates.
 | "It works, so it's fine" | Working code with poor architecture becomes non-working code during the next change. |
 | "The author knows best" | Fresh eyes catch blind spots. That's the point of review. |
 | "It's just a small change" | Small changes in the wrong layer create architectural debt. |
+| "It's just a version bump" | A bump is a behavior change you didn't write. Read the changelog; semver doesn't guarantee no breakage. |
+| "The tests cover it" | Prove it — mutate the new condition and see if anything goes red. |
 
 ## Red Flags
 
@@ -166,11 +181,14 @@ of manual field mapping for partial updates.
 - Feature module depending on another feature module
 - Secrets or API keys in source code
 - `@Suppress` annotations without explanatory comments
+- A bulk "bump dependencies" PR with no changelog review and no per-dependency isolation
+- `verification-metadata.xml` or lockfiles hand-edited or merged without reviewing their diff
 
 ## Verification
 
 - [ ] All five axes reviewed (Correctness, Readability, Architecture, Security, Performance)
-- [ ] Tests reviewed first (coverage, edge cases, naming)
+- [ ] Tests reviewed first (coverage, edge cases, naming) — at least one new condition mutated to confirm a test catches its regression
+- [ ] Dependency upgrades reviewed against changelogs, isolated per dependency, with the resolved-dependency diff checked
 - [ ] Findings categorized (Critical, Important, Suggestion, Nit, FYI)
 - [ ] Critical findings resolved before approval
 - [ ] `./gradlew test` passes

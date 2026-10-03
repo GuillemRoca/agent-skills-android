@@ -42,6 +42,7 @@ The fastest way to invoke a workflow:
 
 ```
 /spec    → Write a specification for your feature
+/constraints → Set the project's quality bar (CONSTRAINTS.md) once
 /plan    → Break the spec into implementation tasks
 /build   → Implement the next task with TDD
 /test    → Write tests for new features or bug fixes

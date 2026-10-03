@@ -24,11 +24,12 @@ Skills are structured Markdown files that teach AI coding agents **how** to work
   /spec          /plan        /build        /test         /review       /ship
 ```
 
-Seven slash commands provide quick access:
+Eight slash commands provide quick access:
 
 | Phase | Command | What It Does |
 |-------|---------|-------------|
 | DEFINE | `/spec` | Write a structured specification |
+| DEFINE | `/constraints` | Set the project's quality bar once, enforce it everywhere |
 | PLAN | `/plan` | Break work into ordered tasks |
 | BUILD | `/build` | Implement incrementally with TDD |
 | BUILD | `/code-simplify` | Simplify code preserving behavior |
@@ -36,7 +37,7 @@ Seven slash commands provide quick access:
 | REVIEW | `/review` | Five-axis code review |
 | SHIP | `/ship` | Pre-launch checklist and rollout |
 
-## All 29 Skills
+## All 30 Skills
 
 ### DEFINE Phase
 | Skill | Description |
@@ -45,6 +46,7 @@ Seven slash commands provide quick access:
 | `idea-refine` | Sharpen vague ideas into focused, actionable directions |
 | `spec-driven-development` | Write structured specs before coding |
 | `context-engineering` | Set up project context for AI-assisted development |
+| `constraint-driven-development` | Write the quality bar down (CONSTRAINTS.md) and stop agents quietly lowering it |
 
 ### PLAN Phase
 | Skill | Description |
@@ -120,7 +122,7 @@ claude plugin marketplace add GuillemRoca/claude-plugins
 claude plugin install agent-skills-android@guillemroca
 ```
 
-Restart Claude Code. Skills, slash commands (`/spec`, `/plan`, `/build`, `/test`, `/review`, `/ship`), and agent personas are available immediately.
+Restart Claude Code. Skills, slash commands (`/spec`, `/constraints`, `/plan`, `/build`, `/test`, `/review`, `/ship`), and agent personas are available immediately.
 
 **Recommended companion — Google's official Android skills:**
 
