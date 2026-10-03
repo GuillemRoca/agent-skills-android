@@ -2,7 +2,7 @@
 
 **Production-grade Android engineering skills for AI coding agents.**
 
-29 specialized workflows covering the full development lifecycle from spec to Play Store — built for Kotlin, Jetpack Compose, Gradle, and the Android ecosystem.
+30 specialized workflows covering the full development lifecycle from spec to Play Store — built for Kotlin, Jetpack Compose, Gradle, and the Android ecosystem.
 
 ## What Are Skills?
 
