@@ -136,8 +136,11 @@ This plugin covers the *process* (spec → plan → build → verify → review 
 To update later (use the fully qualified `plugin@marketplace` form — the short name returns "Plugin not found"):
 
 ```bash
+claude plugin marketplace update guillemroca
 claude plugin update agent-skills-android@guillemroca
 ```
+
+> **Versioning:** the plugin has no `version` field — every commit on `main` is a release, and Claude Code shows the installed version as a commit SHA. If you installed an earlier numbered release (≤ 1.6.0), the commands above move you to the latest commit; no reinstall needed. See [CONTRIBUTING.md](CONTRIBUTING.md#releases).
 
 > **Update fails with an SSH / "Permission denied (publickey)" error?** This is the most common cause. The marketplace clones repos via SSH. If you don't have SSH keys set up on GitHub, either [add your SSH key](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account) or use the full HTTPS URL to force the HTTPS cloning:
 > ```bash
