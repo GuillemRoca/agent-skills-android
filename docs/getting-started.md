@@ -131,6 +131,21 @@ REVIEW: code-review-and-quality, security-and-hardening
 SHIP: ci-cd-and-automation → git-workflow-and-versioning → shipping-and-launch
 ```
 
+### Working across sessions
+
+The spec and plan files are the handoff between sessions. For a small task, run the whole lifecycle in one session. For anything non-trivial, a fresh session per phase (spec → plan → build → review) keeps context focused — what carries the work forward is the approved files, not the conversation:
+
+- the spec — `SPEC.md`, or wherever your spec lives
+- `tasks/plan.md` and `tasks/todo.md` — or the external tracker the plan names
+
+**Before switching**, make sure those files record the decisions that still apply, the approved scope, open questions, the next task, and the current verification state (which Gradle tasks ran, against which commit).
+
+**In the new session**, read the files and `git status` before doing anything. Don't assume approvals you can't see in the files. Treat a recorded "tests pass" as a claim about a specific baseline: re-run what it covers if the code has moved, if it doesn't say what ran against what, or if you're about to touch that area. If the baseline holds, move on — the check should be proportional to what changed, not a full `./gradlew check` at every handoff. See `context-engineering` (Step 6) for the full handoff checklist.
+
+Plain requests work too, without `/spec` or `/plan`:
+
+> Read SPEC.md, tasks/plan.md and tasks/todo.md, then check where things actually stand — `git status`, plus re-running whatever checks the recorded verification state no longer covers. Tell me the next unchecked task and anything still open, then stop: I'll confirm the scope before you start it.
+
 ## Tips
 
 1. **Load skills contextually** — don't load all 30 at once. Load the one for your current task.

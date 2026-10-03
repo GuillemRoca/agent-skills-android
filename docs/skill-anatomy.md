@@ -35,6 +35,8 @@ description: >-
 - `name`: lowercase, hyphen-separated, matches directory name exactly
 - `description`: starts with "Use when", describes *what* and *when*
 - Description is used in system prompts for skill matching — be specific about triggers
+- Only the Agent Skills spec keys are allowed at the top level: `name`, `description`, `license`, `compatibility`, `metadata`, `allowed-tools`. Anything host- or model-specific goes under `metadata`
+- Keep values YAML-safe: fold long text with `>-`, and quote a single-line value that starts with `` ` ``, `@`, `*`, `%`, `,` or contains `: `. `./scripts/validate-skills.sh` enforces both rules
 
 ### Section 1: Overview
 
@@ -177,13 +179,32 @@ Tests are important for software quality.
 
 Every skill should include the shortcuts agents are most likely to attempt. The "Common Rationalizations" table is not optional — it's one of the most valuable sections.
 
+### Write the Procedure, Not the Workaround
+
+Skills run on many agents and model generations. A step that exists because one model gets a specific call wrong is a liability on every other model: it constrains agents that would have solved the task directly, and it spends turns stronger models need for the actual work.
+
+**The rule:** if a step can't be justified without naming a model, a model version, or one agent's private tool name, it belongs in an issue, not in a skill. Describe the capability ("run the module's unit tests", "write the file"), not the mechanism one runtime happens to expose.
+
+Two smells to check before proposing skill content:
+
+- **Over-specified mechanics.** Prescribing an exact command form or serialization detail where stating the goal would do. If the justification is "model X gets this wrong otherwise", it's a workaround, not a procedure.
+- **Fragmented diagnostics.** A multi-step inspection sequence where one step would confirm the same thing. Every extra step spends turns, and turn budget is finite.
+
+## Shared References
+
+Checklists used by more than one skill (testing, security, performance, accessibility, the Android CLI) live in `references/` at the repository root, not inside any skill. Material used by exactly one skill lives in that skill's own directory (e.g. `skills/constraint-driven-development/references/floor-guard.md`).
+
+Paths resolve from the file that names them. From a `SKILL.md`, a shared checklist is `../../references/<file>.md`; a skill's own file is `references/<file>.md`. Writing `references/security-checklist.md` in a `SKILL.md` points at a file that doesn't exist — the validator fails on it.
+
+The tradeoff is portability: a whole-repo install (the Claude Code plugin) carries `references/` along, but an install that copies only `skills/<name>/` leaves the shared checklists behind.
+
 ## Sizing Guide
 
 - Target: **under 500 lines** per SKILL.md
 - If a skill exceeds 500 lines, consider:
   - Splitting into two skills
   - Moving detailed examples to `examples.md`
-  - Moving reference data to `references/`
+  - Moving reference data to the skill's own `references/` (see [Shared References](#shared-references))
   - Removing redundant sections
 
 ## Description Writing Guide

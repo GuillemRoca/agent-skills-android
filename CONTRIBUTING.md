@@ -59,7 +59,10 @@ description: >-
 **Cross-references:**
 - Reference related skills by name: "see `android-device-testing`"
 - Don't duplicate content — link to the related skill instead
-- Reference checklists in `references/` for detailed lists
+- Reference shared checklists as `../../references/<file>.md` from a `SKILL.md` — paths resolve from the file (see [Shared References](docs/skill-anatomy.md#shared-references))
+
+**Model-neutral:**
+- Strip model-specific workarounds. If a step can't be justified without naming a model, a model version, or one agent's private tool name, it doesn't belong in a skill — describe the capability instead (see [Write the Procedure, Not the Workaround](docs/skill-anatomy.md#write-the-procedure-not-the-workaround))
 
 ## Modifying an Existing Skill
 
@@ -91,7 +94,7 @@ Run the validator first — it enforces the structural rules automatically and r
 ./scripts/validate-skills.sh
 ```
 
-It checks: frontmatter (`name` matches the kebab-case directory, ≤64 chars; `description` starts with "Use when", ≤1024 chars), the six required sections (meta-skill exempt), the 500-line cap, that `AGENTS.md`/`README.md` skill tables list exactly the skills on disk, and that every prose skill count ("All 30 Skills", "30 specialized workflows", "all 30 at once") in the docs and skills matches the number of skills on disk — when you add or remove a skill, update those counts.
+It checks: frontmatter (`name` matches the kebab-case directory, ≤64 chars; `description` starts with "Use when", ≤1024 chars; only Agent Skills spec keys; YAML-safe single-line values), the six required sections (meta-skill exempt), the 500-line cap, skill layout (no empty subdirectories, kebab-case supporting files), that every `references/*.md` path in a skill resolves from its file, that relative markdown links and `#anchors` across the docs, personas, commands and skills resolve (fenced code is exempt), that `AGENTS.md`/`README.md` skill tables list exactly the skills on disk, and that every prose skill count ("All 30 Skills", "30 specialized workflows", "all 30 at once") in the docs and skills matches the number of skills on disk — when you add or remove a skill, update those counts.
 
 If you touch `hooks/session-start.sh`, also run `./hooks/session-start-test.sh` (CI runs it too). The script must emit the standard SessionStart envelope (`hookSpecificOutput.additionalContext`) on every path. The plugin deliberately does not register it — Claude Code routes skills natively, and always-on injection of `using-agent-skills` would create a second router (see [docs/getting-started.md](docs/getting-started.md#hooks-hooks)).
 
@@ -113,10 +116,13 @@ Then review by hand:
 
 ## Pull Request Process
 
-1. Create a branch: `skill/your-skill-name` or `fix/skill-name-issue`
-2. Follow the structure and quality standards above
-3. Ensure no web-specific language leaks (no npm, React, Playwright, etc.)
-4. Submit a PR with a description of what the skill covers and when to use it
+1. Check the [rejected skill changes log](docs/rejected-skill-changes.md) for earlier proposals that overlap with yours, and say in the PR why yours is different
+2. Create a branch: `skill/your-skill-name` or `fix/skill-name-issue`
+3. Follow the structure and quality standards above
+4. Ensure no web-specific language leaks (no npm, React, Playwright, etc.)
+5. Submit a PR with a description of what the skill covers and when to use it
+
+When a skill proposal or skill change is rejected, add one row to the log in a separate commit on `main` — not only on the rejected branch, where closing or force-pushing the PR would lose the record.
 
 ## Releases
 
