@@ -4,7 +4,7 @@ description: >-
   Use when starting a session or selecting a skill for a task. Meta-skill
   defining five core agent behaviors: assumption surfacing, confusion
   management, constructive pushback, simplicity enforcement, and scope
-  discipline. Includes the skill discovery flowchart for all 24 Android skills.
+  discipline. Includes the skill discovery flowchart for all 29 Android skills.
 ---
 
 # Using Agent Skills (Android)
@@ -69,6 +69,9 @@ What are you trying to do?
 ├─ "I have a vague idea"
 │   └─ idea-refine → spec-driven-development
 │
+├─ "Requirements are unclear or contradictory"
+│   └─ interview-me → spec-driven-development
+│
 ├─ "I need to write a spec"
 │   └─ spec-driven-development
 │
@@ -80,11 +83,14 @@ What are you trying to do?
 │   ├─ UI with Compose? → android-ui-engineering
 │   ├─ Data persistence? → android-data-persistence
 │   ├─ API/interface design? → api-and-interface-design
+│   ├─ Work outside the visible UI (sync, uploads)? → android-background-work
+│   ├─ High-stakes, hard-to-reverse decision? → doubt-driven-development
 │   └─ General implementation → incremental-implementation + test-driven-development
 │
 ├─ "I need to test"
 │   ├─ Unit/integration tests → test-driven-development
 │   ├─ Device/UI tests → android-device-testing
+│   ├─ End-to-end proof on a device → android-e2e-verification
 │   └─ Accessibility testing → android-accessibility
 │
 ├─ "I need to review code"
@@ -101,6 +107,7 @@ What are you trying to do?
 ├─ "I need to ship"
 │   ├─ CI/CD setup → ci-cd-and-automation
 │   ├─ Version/release → git-workflow-and-versioning
+│   ├─ Logging, crash reporting, monitoring → observability-and-instrumentation
 │   └─ Launch checklist → shipping-and-launch
 │
 ├─ "I need to migrate/deprecate"
@@ -119,10 +126,11 @@ What are you trying to do?
     └─ Start with idea-refine or context-engineering
 ```
 
-## Quick Reference: All 24 Skills
+## Quick Reference: All 29 Skills
 
 | Phase | Skill | Trigger |
 |-------|-------|---------|
+| **DEFINE** | `interview-me` | Requirements vague or contradictory |
 | **DEFINE** | `idea-refine` | Vague idea needs sharpening |
 | **DEFINE** | `spec-driven-development` | Need a spec before coding |
 | **DEFINE** | `context-engineering` | Setting up AI context for project |
@@ -132,11 +140,14 @@ What are you trying to do?
 | **BUILD** | `test-driven-development` | Writing tests before code |
 | **BUILD** | `android-ui-engineering` | Building Compose UI |
 | **BUILD** | `android-data-persistence` | Room, DataStore, offline-first |
+| **BUILD** | `android-background-work` | WorkManager, foreground services, alarms |
 | **BUILD** | `api-and-interface-design` | Designing interfaces and contracts |
 | **BUILD** | `source-driven-development` | Using official docs for framework code |
+| **BUILD** | `doubt-driven-development` | Stress-testing a high-stakes decision |
 | **BUILD** | `code-simplification` | Making code easier to understand |
 | **BUILD** | `documentation-and-adrs` | Writing docs and ADRs |
 | **VERIFY** | `android-device-testing` | Instrumented tests, emulator, ADB |
+| **VERIFY** | `android-e2e-verification` | Maestro end-to-end flows on device |
 | **VERIFY** | `android-accessibility` | Accessibility compliance |
 | **VERIFY** | `debugging-and-error-recovery` | Fixing bugs systematically |
 | **VERIFY** | `performance-optimization` | Measuring and improving performance |
@@ -145,6 +156,7 @@ What are you trying to do?
 | **SHIP** | `ci-cd-and-automation` | CI/CD pipeline setup |
 | **SHIP** | `git-workflow-and-versioning` | Git workflow and versioning |
 | **SHIP** | `shipping-and-launch` | Release checklist and rollout |
+| **SHIP** | `observability-and-instrumentation` | Logging, Crashlytics, release health |
 | **SHIP** | `deprecation-and-migration` | Deprecating and migrating code |
 | **META** | `using-agent-skills` | How agents should operate |
 
