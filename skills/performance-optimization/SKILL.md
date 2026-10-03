@@ -216,17 +216,38 @@ AsyncImage(
 )
 ```
 
-### Step 4: Verify
+### Step 4: Verify (Keep or Revert)
 
-9. **Confirm improvement with measurements:**
-   - Re-run Macrobenchmark — compare before/after
-   - Check frame metrics in Android Studio Profiler
-   - Verify APK size: `./gradlew assembleRelease` → Analyze APK
-   - Run on lower-end devices (not just your development device)
+A fix is a hypothesis until you re-measure. This step decides whether it survives.
+
+9. **Re-measure the way you measured the baseline:** same Macrobenchmark module and `iterations`, same `CompilationMode`, same device, same build type (release/benchmark), same `StartupMode`. A cold-start baseline compared against a warm-start result measures the start mode, not your change.
+   - Startup and frames: re-run Macrobenchmark and compare median *and* spread
+   - APK/AAB size: `./gradlew bundleRelease` and compare against the baseline artifact
+   - Run on lower-end devices, not just your development device
+10. **Change one thing at a time.** Three optimizations landed together produce one number you can't attribute. If they must ship together, measure each in isolation first.
+11. **Beat the noise, not just the mean.** Compare the delta against run-to-run variance across iterations. A 20ms startup gain inside ±40ms variance is a different sample, not a gain.
+12. **Then decide, strictly:**
+
+| Result vs. baseline | Action |
+|---|---|
+| Past the threshold, tests green | **Keep.** Commit with the before/after numbers in the message |
+| Within noise | **Revert** |
+| Worse | **Revert** |
+| Improved, but a test went red | **Revert** — a regression wearing a win's clothing |
+
+"Neutral" is a revert, not a keep: code you keep, you maintain forever. Correctness gates the metric — an "optimization" that wins by dropping work the product needed (skipping validation, caching data that must be fresh, moving required init off the startup path so it races) is a regression.
+
+13. **Log every attempt, including reverted ones.** Reverted work leaves no trace in git, which is why the same dead idea comes back next quarter. Keep a short ledger in the PR description or a `PERF.md`:
+
+| Idea | Baseline → Result | Verdict | Why |
+|---|---|---|---|
+| `remember` the row's formatted date | 6.1% → 6.0% slow frames | reverted | Inside noise; rows weren't the bottleneck |
+| Stable keys + `contentType` in `LazyColumn` | 6.1% → 1.8% slow frames | kept | Recompositions per scroll dropped 10x |
+| Lazy-init analytics SDK via App Startup | TTID 820ms → 815ms | reverted | Init was already off the main thread |
 
 ### Step 5: Guard
 
-10. **Prevent regressions:**
+14. **Prevent regressions:**
     - Baseline Profiles generated in CI
     - Macrobenchmark tests run on pre-release builds
     - APK size budget checked in CI
@@ -240,6 +261,9 @@ AsyncImage(
 | "We'll optimize later" | Performance debt compounds. Fixing later costs 10x more. |
 | "The profiler shows it's fine" | Profiling in debug mode hides R8 optimizations and ART compilation. Profile release builds. |
 | "Only 5% of users hit this" | 5% of 1M users is 50,000 people. Every percentage matters. |
+| "It didn't help much, but it doesn't hurt" | Neutral changes are a revert. You maintain them forever and got nothing back. |
+| "We already wrote it, may as well keep it" | Sunk cost. The measurement doesn't care how long the change took. |
+| "The improvement is obvious, no need to re-measure" | Then re-measuring is cheap and proves it. Unmeasured wins are how neutral complexity lands. |
 
 ## Red Flags
 
@@ -251,6 +275,10 @@ AsyncImage(
 - Heavy computation on main thread
 - Images loaded at full resolution
 - Profiling only done on debug builds
+- Optimizations kept without a re-measurement that justifies them
+- Several optimizations bundled into one measurement
+- A "win" that required a test to be changed, skipped, or deleted
+- The same failed optimization tried again because nobody recorded the first attempt
 
 ## Verification
 
@@ -263,3 +291,5 @@ AsyncImage(
 - [ ] Heavy work off main thread
 - [ ] Macrobenchmark tests guard critical paths
 - [ ] Performance tested on low-end devices
+- [ ] Each change re-measured the same way as the baseline, and the delta exceeds run-to-run variance
+- [ ] Changes that didn't beat the baseline were reverted, and every attempt (kept or reverted) is logged

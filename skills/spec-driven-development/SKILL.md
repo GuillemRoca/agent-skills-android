@@ -3,7 +3,9 @@ name: spec-driven-development
 description: >-
   Use when starting new Android projects, features, or changes with unclear
   requirements. Guides writing a structured spec (SPEC.md) that becomes the
-  shared source of truth before any code is written.
+  shared source of truth before any code is written. Also use when one
+  request spans several independently testable capabilities and needs a
+  capability map of modules before specifying.
 ---
 
 # Spec-Driven Development
@@ -22,6 +24,41 @@ Write a structured specification before writing code. The spec becomes the share
 **Skip when:** Single-line fixes or changes that are unambiguous and self-contained.
 
 ## Core Process
+
+Four phases, preceded by a scope check (Phase 0) that activates only when one request bundles several independently testable capabilities. Don't advance to the next phase until the current one is approved.
+
+### Phase 0: Scope Check
+
+Most requests describe one capability — skip straight to Specify. Phase 0 is for the exception.
+
+**Detection.** Decompose before specifying when a single requirement bundles several independently testable capabilities:
+
+- It names distinct capabilities with their own consumers or data (e.g. sign-in, checkout, push notifications, order history)
+- Acceptance criteria cluster into groups that could ship and be verified separately
+- One capability could be cut or replaced without rewriting the others' requirements
+
+**Propose a capability map before writing any spec.** A module table plus a build order — not a project plan. On Android, module ids usually line up with the Gradle modules they will become:
+
+```markdown
+# Capability Map: [Initiative Name]
+
+| Module id     | Gradle module            | Responsibility                  | Depends on        |
+|---------------|--------------------------|---------------------------------|-------------------|
+| auth          | :feature:auth            | Sign-in, session, token refresh | —                 |
+| checkout      | :feature:checkout        | Cart, payment, confirmation     | auth              |
+| notifications | :core:notifications      | FCM registration, channels      | auth              |
+| order-history | :feature:order-history   | Past orders list and detail     | checkout          |
+
+Build order: auth → checkout, notifications → order-history
+```
+
+- **Stable module ids.** Kebab-case, chosen once, never renamed mid-initiative. Specs and plans select work by these ids instead of guessing which spec is active.
+- **Dependency direction, no cycles.** Arrows point one way — the same rule Gradle enforces between modules. If two modules each need the other, they are one module.
+- **Interfaces live at the boundary.** The map records that `checkout` depends on `auth`; the contract between them belongs in the provider module's spec (see `api-and-interface-design`).
+
+**The map is gated like every phase.** The human reviews module boundaries, dependency direction, and build order before any module spec is written. Getting the map wrong is expensive; reviewing ten lines is not.
+
+**Then recurse per module.** Run Specify → Plan → Tasks → Implement for each module in dependency order. Save the approved map at the project root and each module's spec next to it, named by module id (`SPEC-auth.md`, `SPEC-checkout.md`) — the map, not filename guessing, is the index of what exists.
 
 ### Phase 1: Specify
 
@@ -73,10 +110,14 @@ What is explicitly NOT in scope:
 
 3. **Save as `SPEC.md`** in the project or module root
 
+4. **Stop after writing the spec.** Once it is saved:
+   - Summarize it and list any open questions
+   - Ask the human to approve it or request changes
+   - **End your turn.** Don't start Phase 2, invoke `planning-and-task-breakdown`, or write code in the same turn. Planning starts only after the human approves the spec in a later turn.
+
 ### Phase 2: Plan
 
-4. Review spec with human — get explicit approval before continuing
-5. Use `planning-and-task-breakdown` to create implementation tasks from the spec
+5. With the approved spec, use `planning-and-task-breakdown` to create implementation tasks
 
 ### Phase 3: Tasks
 
@@ -97,10 +138,16 @@ What is explicitly NOT in scope:
 | "We'll figure it out as we go" | Without a spec, each developer builds a different mental model. Alignment costs compound. |
 | "The ticket/issue IS the spec" | Tickets describe what to build. Specs describe how it fits into the system, what's excluded, and how to verify. |
 | "Writing specs slows us down" | Rework from misalignment costs 3–10x more than a spec. |
+| "It's one big feature; splitting it is overhead" | If acceptance criteria cluster into independently testable groups, a monolithic spec forces every task to reason over the whole contract. A ten-line capability map is the cheap alternative. |
+| "I'll decompose during planning" | Planning slices tasks *within* a spec. Module boundaries and dependency direction must be decided before the spec is written, not after. |
+| "The spec is obviously fine, I'll start the plan now" | Approval you didn't wait for isn't approval. The human's corrections are cheapest before a plan is built on the spec. |
 
 ## Red Flags
 
 - Implementation started without written spec
+- Writing the spec and starting the plan or code in the same turn
+- One spec whose requirements span several independently testable capabilities
+- Module boundaries or build order decided implicitly during implementation
 - Spec has no "Boundaries" or exclusions section
 - Spec doesn't specify testing strategy
 - Multiple developers have different understandings of scope
@@ -110,6 +157,7 @@ What is explicitly NOT in scope:
 
 - [ ] SPEC.md exists in version control
 - [ ] All six sections filled in (Objective, Commands, Structure, Style, Testing, Boundaries)
-- [ ] Human has reviewed and approved the spec
+- [ ] Human has reviewed and approved the spec — the turn ended after saving it; approval came in a later turn
+- [ ] If the request bundled several independently testable capabilities, a capability map (module ids, dependency direction, build order) was approved before any module spec was written
 - [ ] Implementation tasks reference spec sections
 - [ ] Spec updated when requirements changed during development

@@ -21,7 +21,9 @@ Load and follow the `planning-and-task-breakdown` skill from `skills/planning-an
 
 Create two files:
 - `tasks/plan.md` — dependency graph and approach
-- `tasks/todo.md` — ordered task list with acceptance criteria
+- `tasks/todo.md` — ordered task list with acceptance criteria (or one item per task in the external tracker the project designates — see the skill)
+
+If `tasks/plan.md` or `tasks/todo.md` already exists with unchecked tasks for different work, stop and ask before writing — never silently overwrite an incomplete plan.
 
 ### Key Rule
 
