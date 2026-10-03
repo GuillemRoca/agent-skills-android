@@ -35,3 +35,12 @@ jobs:
 
       - name: Validate skill structure and doc consistency
         run: ./scripts/validate-skills.sh
+
+  test-hooks:
+    name: Test hooks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: SessionStart payload and registration
+        run: ./hooks/session-start-test.sh

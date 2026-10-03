@@ -55,7 +55,7 @@ The fastest way to invoke a workflow:
 
 Skills are loaded contextually — only the skill relevant to your current task is active:
 
-1. **Session start:** The `using-agent-skills` meta-skill loads automatically, providing the skill discovery flowchart
+1. **Discovery:** Hosts that route skills natively (Claude Code, Codex CLI) activate skills from their descriptions — including `using-agent-skills` and its discovery flowchart — so nothing is injected at session start. On hosts without native routing, load `using-agent-skills` up front (see [Hooks](#hooks-hooks))
 2. **Task matching:** Based on your request, the agent selects the appropriate skill
 3. **Workflow execution:** The agent follows the skill's process step by step
 4. **Verification:** Each skill ends with a checklist — no step is "done" without evidence
@@ -103,10 +103,12 @@ Detailed checklists for deep-dive reviews:
 
 ### Hooks (`hooks/`)
 
-Automation hooks for Claude Code sessions:
+Opt-in automation hooks. The plugin registers none of them; wire the ones you want into your host's hook settings:
 
-- `session-start.sh` — loads the meta-skill at session start
+- `session-start.sh` — injects the `using-agent-skills` meta-skill at session start. Only for hosts **without** native skill routing: on Claude Code or Codex CLI it would run a second router on top of the native one, so don't wire it there. Emits the standard `hookSpecificOutput.additionalContext` SessionStart envelope; `session-start-test.sh` checks it
 - `simplify-ignore.sh` — protects annotated code blocks from `/code-simplify`
+
+If your host already discovers skills from their descriptions, don't paste `using-agent-skills` into an always-on system prompt or rules file either — that creates the same two-routers problem.
 
 ## Development Lifecycle
 
