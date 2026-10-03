@@ -122,6 +122,15 @@ claude plugin install agent-skills-android@guillemroca
 
 Restart Claude Code. Skills, slash commands (`/spec`, `/plan`, `/build`, `/test`, `/review`, `/ship`), and hooks are available immediately.
 
+**Recommended companion — Google's official Android skills:**
+
+```bash
+claude plugin marketplace add android/skills
+claude plugin install android-skills@android-skills
+```
+
+This plugin covers the *process* (spec → plan → build → verify → review → ship); [android/skills](https://github.com/android/skills) covers specific Jetpack/Play APIs in depth (Navigation 3, adaptive layouts, edge-to-edge, AGP 9, R8, Play Billing, CameraX, intent/permission security, and more). They don't overlap, and several skills here point to `android-skills:<name>` for the deep dive. Install it from its own marketplace so it keeps receiving Google's updates — if you previously copied those skills into `~/.claude/skills/`, remove the copies to avoid loading them twice.
+
 > **How loading works:** `.claude-plugin/plugin.json` registers only `commands` and `skills` explicitly. The `agents/` personas and `hooks/hooks.json` are picked up by Claude Code's convention-based auto-discovery of those directories — they are intentionally *not* listed in the manifest (doing so caused duplicate-load errors; see plugin v1.5.1/v1.5.2 history). If personas or hooks stop loading after a Claude Code update, check the auto-discovery behavior before touching the manifest.
 
 To update later (use the fully qualified `plugin@marketplace` form — the short name returns "Plugin not found"):

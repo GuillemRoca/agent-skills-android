@@ -96,6 +96,7 @@ class StartupBenchmark {
    - **Memory Profiler:** Track allocations, find leaks, heap dumps
    - **Network Profiler:** Inspect API calls, timing, payload sizes
    - **Energy Profiler:** CPU, network, and GPS wake lock usage
+   - For agent-driven capture and Perfetto trace analysis, see `android-skills:android-profiler` (optional Google companion plugin, see README)
 
 ### Step 2: Identify Bottlenecks
 
@@ -196,6 +197,8 @@ android {
 // Use dynamic feature modules for large optional features
 // Analyze APK: Build → Analyze APK in Android Studio
 ```
+
+   To audit keep rules for redundant or overly broad entries, see `android-skills:r8-analyzer` (optional Google companion plugin, see README).
 
 8. **Image loading optimization:**
 

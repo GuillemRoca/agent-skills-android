@@ -118,6 +118,8 @@ class TaskDeepLinkActivity : ComponentActivity() {
 }
 ```
 
+   Deeper audits: `android-skills:android-intent-security` and `android-skills:android-permissions-security` (optional Google companion plugin, see README).
+
 5. **Secrets management:**
 
 ```properties
