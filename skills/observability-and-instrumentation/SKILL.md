@@ -80,7 +80,7 @@ Timber.d("sync failed for user %s token %s", email, token)
 
 5. **Logging rules:**
    - No PII, tokens, or request bodies at any level
-   - `Log.d`/`Log.v` stripped in release via R8 (`-assumenosideeffects`, see `references/security-checklist.md`)
+   - `Log.d`/`Log.v` stripped in release via R8 (`-assumenosideeffects`, see `../../references/security-checklist.md`)
    - One event, one line, stable key=value shape — greppable beats prose
 
 **When several entry points write to one log, name the entry point.** The same `SyncWorker` enqueued periodically, by an FCM push, and by pull-to-refresh — plus a foreground service and the UI reporting sync errors to the same tag — produces interchangeable `sync_failed` lines and non-fatals. Attributing one then falls back to elimination (WorkManager history, device state, release timing), which holds only while those records still exist. Stamp the entry point where the run starts and carry it across the boundary, never re-derive it downstream:

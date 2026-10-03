@@ -47,7 +47,7 @@ description: >-
    android layout --pretty --output=repro.json      # full UI tree (resource-ids, text, bounds, role)
    ```
 
-   Three artifacts in <5 seconds, pre-debugger. Attach them to the bug report or commit them to a `repro/` scratch dir before iterating. See `references/android-cli-reference.md`.
+   Three artifacts in <5 seconds, pre-debugger. Attach them to the bug report or commit them to a `repro/` scratch dir before iterating. See `../../references/android-cli-reference.md`.
 
 ### Step 2: Localize
 
