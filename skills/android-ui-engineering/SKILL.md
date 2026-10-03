@@ -306,8 +306,8 @@ private fun TaskListScreenPreview() {
 
 14. **Previews are verifiable — look at what you built:**
 
-    - **Agent-side rendering:** `android studio render-compose-preview --output-image-file=preview.png <file> <composable>` renders a `@Preview` to PNG without a device, so you can inspect the UI you just wrote instead of assuming it looks right (requires a running Android Studio with Gemini; see `references/android-cli-reference.md`)
-    - **Screenshot tests:** lock previews in with Compose Preview Screenshot Testing or Roborazzi so regressions fail CI — patterns in `references/testing-patterns.md`, workflow in `android-device-testing`
+    - **Agent-side rendering:** `android studio render-compose-preview --output-image-file=preview.png <file> <composable>` renders a `@Preview` to PNG without a device, so you can inspect the UI you just wrote instead of assuming it looks right (requires a running Android Studio with Gemini; see `../../references/android-cli-reference.md`)
+    - **Screenshot tests:** lock previews in with Compose Preview Screenshot Testing or Roborazzi so regressions fail CI — patterns in `../../references/testing-patterns.md`, workflow in `android-device-testing`
 
 ### Step 8: XML Interop (Legacy)
 
@@ -380,4 +380,4 @@ fun LegacyMapView(modifier: Modifier = Modifier) {
 - [ ] Previews exist for screens and key components — and rendered/screenshot-tested, not just written
 - [ ] `./gradlew assembleDebug` builds successfully
 - [ ] Layout Inspector shows reasonable recomposition counts
-- [ ] On-device hierarchy inspected via `android layout --pretty` when verifying Compose output against `@Preview` (see `references/android-cli-reference.md`)
+- [ ] On-device hierarchy inspected via `android layout --pretty` when verifying Compose output against `@Preview` (see `../../references/android-cli-reference.md`)

@@ -93,7 +93,7 @@ A failing flow is the signal to keep working; a passing flow is the tangible evi
 maestro record .maestro/create-task.yaml   # video of the run
 ```
 
-5. **Agent-driven loop (MCP):** when the harness supports MCP, run `maestro mcp` to expose the device to the agent directly — the agent can tap, assert, and inspect live (Maestro Viewer) instead of shelling out per command. In headless/CI contexts, plain `maestro test` is the fallback. For ad-hoc exploration without Maestro, use `android screen capture --annotate` + `android screen resolve` (see `references/android-cli-reference.md`).
+5. **Agent-driven loop (MCP):** when the harness supports MCP, run `maestro mcp` to expose the device to the agent directly — the agent can tap, assert, and inspect live (Maestro Viewer) instead of shelling out per command. In headless/CI contexts, plain `maestro test` is the fallback. For ad-hoc exploration without Maestro, use `android screen capture --annotate` + `android screen resolve` (see `../../references/android-cli-reference.md`).
 
 ### Step 4: Wire Into CI
 

@@ -180,7 +180,7 @@ class LegacyFragment : Fragment() {
 
 To resolve the current compatible AGP/Kotlin/Compose versions authoritatively, use
 `android studio version-lookup agp kotlin compose` when the `android` CLI and a
-running Android Studio are available (see `references/android-cli-reference.md`),
+running Android Studio are available (see `../../references/android-cli-reference.md`),
 instead of guessing from memory.
 
 ### Step 6: API Contract and Schema Changes (Expand/Contract)

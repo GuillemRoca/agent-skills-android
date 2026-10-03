@@ -248,7 +248,7 @@ emulator -avd Pixel_7_API_35 -no-window -no-audio -gpu swiftshader_indirect
     android layout --diff               # only nodes added/changed/removed since last snapshot
     ```
 
-    Useful during test authoring: lets you discover the exact `resource-id`, `text`, and `bounds` of the elements your test should assert on, without guessing from a screenshot. See `references/android-cli-reference.md`.
+    Useful during test authoring: lets you discover the exact `resource-id`, `text`, and `bounds` of the elements your test should assert on, without guessing from a screenshot. See `../../references/android-cli-reference.md`.
 
 ### Step 7: Screenshot Tests
 
@@ -257,7 +257,7 @@ emulator -avd Pixel_7_API_35 -no-window -no-audio -gpu swiftshader_indirect
     - **Compose Preview Screenshot Testing** (official `com.android.compose.screenshot` plugin): reuses your `@Preview` composables. Record goldens with `./gradlew updateDebugScreenshotTest`, fail CI on diffs with `./gradlew validateDebugScreenshotTest`.
     - **Roborazzi** (Robolectric-based): `captureRoboImage()` inside any Compose/Robolectric test — use when you need interactions before capture or non-Preview cases.
 
-    Use Preview Screenshot Testing by default (zero extra test code); reach for Roborazzi when a state can't be expressed as a preview. Keep goldens deterministic (fixed locale, font scale, time inputs) and commit them — a diff is a review artifact. Patterns in `references/testing-patterns.md`.
+    Use Preview Screenshot Testing by default (zero extra test code); reach for Roborazzi when a state can't be expressed as a preview. Keep goldens deterministic (fixed locale, font scale, time inputs) and commit them — a diff is a review artifact. Patterns in `../../references/testing-patterns.md`.
 
 ### Step 8: Journeys and Black-Box E2E
 
@@ -269,7 +269,7 @@ emulator -avd Pixel_7_API_35 -no-window -no-audio -gpu swiftshader_indirect
     | **Maestro** (see `android-e2e-verification`) | Black-box YAML over adb | Deterministic acceptance flows per feature slice; release builds; CI |
     | **Journeys** (`android` CLI / Android Studio) | AI vision + reasoning from natural-language steps | Exploratory E2E where maintaining selectors isn't worth it; resilient to layout churn but slower and less deterministic |
 
-    When driving the device ad hoc (reproducing a bug, verifying a fix), use the CLI's see-and-drive loop: `android screen capture --annotate` labels every element with `#n`, then `android screen resolve --screenshot=... --string="input tap #5"` translates the label into `adb shell input` coordinates. See `references/android-cli-reference.md`.
+    When driving the device ad hoc (reproducing a bug, verifying a fix), use the CLI's see-and-drive loop: `android screen capture --annotate` labels every element with `#n`, then `android screen resolve --screenshot=... --string="input tap #5"` translates the label into `adb shell input` coordinates. See `../../references/android-cli-reference.md`.
 
 ### Step 9: Layout Inspector
 

@@ -192,7 +192,7 @@ When the `android` CLI is present in the runner image, `android sdk install` is 
       platform-tools
 ```
 
-Stick with `reactivecircus/android-emulator-runner` for the emulator itself — `android emulator` is **disabled on Windows** and the runner action handles snapshot caching, hardware acceleration, and animation disabling that you'd otherwise rebuild by hand. See `references/android-cli-reference.md`.
+Stick with `reactivecircus/android-emulator-runner` for the emulator itself — `android emulator` is **disabled on Windows** and the runner action handles snapshot caching, hardware acceleration, and animation disabling that you'd otherwise rebuild by hand. See `../../references/android-cli-reference.md`.
 
 6. **Test sharding for large test suites:**
 
